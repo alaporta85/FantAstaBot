@@ -156,10 +156,7 @@ def check_offer_value(offer_id, player, dt):
 				table='offers',
 				columns_in=['offer_id', 'offer_user',
 				            'offer_price', 'offer_datetime'],
-				where='{} OR {}'.format(cond1, cond2)
-				# where='offer_player = "{}" AND '.format(player) +
-				#       'offer_status = "Winning"'
-		)[0]
+				where='{} OR {}'.format(cond1, cond2))[0]
 	except IndexError:
 		last_offer = 0
 		last_user = ''
@@ -271,18 +268,6 @@ def conferma_offerta(bot, update):
 		return bot.send_message(chat_id=update.message.chat_id,
 								text=select_offer_to_confirm(user))
 
-	# not_off = dbf.db_select(
-	# 		table='offers',
-	# 		columns_in=['offer_player'],
-	# 		where='offer_status = "Not Official"')
-	# if pl in not_off:
-	# 	dbf.db_delete(
-	# 			table='offers',
-	# 			where='offer_user = "{}" and offer_player = "{}"'.format(user,
-	# 			                                                         pl))
-	# 	return bot.send_message(chat_id=update.message.chat_id,
-	# 	                        text='Asta già conclusa.')
-
 	status = dbf.db_select(
 					table='players',
 					columns_in=['player_status'],
@@ -346,7 +331,6 @@ def conferma_pagamento(bot, update):
 			columns_in=['budget_value'],
 			where='budget_team = "{}"'.format(user))[0]
 
-	# if len(mn) > 1:
 	mn = mn.split(', ')
 
 	for i in mn:
@@ -517,8 +501,6 @@ def crea_riepilogo(bot, update, dt_now):
 	message1 = message_with_offers(offers_win, 1, dt_now, message1)
 	message2 = message_with_offers(offers_no, 2, dt_now, message2)
 
-	# bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
-	#                  text=message1)
 	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
 	                        text=(message1 + '\n\n\n\n' + message2 +
 	                             '\n\n\n\n' + message3))
