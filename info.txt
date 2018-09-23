@@ -4,17 +4,20 @@ necessarie in sede di mercato.
 1) /offro: Utilizzato sia per presentare una nuova offerta sia per rilanciarexx
 un'offerta già esistente. L'offerta DEVE essere presentata nella forma
 
-          offerta, nome, prime 3 lettere della squadra del calciatore
+          offerta, nome, squadra del calciatore
 
 Se ad esempio volessi offrire 20 per Petagna il comando sarebbe:
 
           /offro 20, petagna, spa
 
-IMPORTANTE: utilizzare la virgola per separare i 3 input e scrivere SOLO lexx
-prime 3 lettere della squadra. Il codice dovrebbe riconoscere il calciatorexx
-anche in caso di piccoli errori nel nome ma ovviamente più il nome chexx
-scrivete è corretto e maggiori saranno le probabilità che il codice loxx
-riconosca.
+IMPORTANTE: utilizzare la virgola per separare i 3 inputs.
+
+NOTA 1: Il codice dovrebbe riconoscere il calciatore anche in caso dixx
+piccoli errori nel nome ma ovviamente più il nome che scrivete è corretto exx
+maggiori saranno le probabilità che il codice lo riconosca.
+
+NOTA 2: Non è necessario scrivere il nome intero della squadra. Le prime 3xx
+lettere o le abbreviazioni (juve, samp, fiore, toro, ecc) sono comunque validi.
 
 
 2) /pago: Utilizzato per ufficializzare le aste concluse ed effettuare ilxx
@@ -36,7 +39,8 @@ calciatori.
 4) /conferma_pagamento: non ha bisogno di spiegazioni
 
 
-5) /riepilogo: mostra le aste in corso e quelle concluse
+5) /riepilogo: mostra le aste in corso, quelle concluse e le operazioni giàxx
+ufficializzate
 
 
 6) /rosa: mostra la rosa aggiornata di colui che invia il comando

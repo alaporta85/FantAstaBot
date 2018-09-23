@@ -8,6 +8,7 @@ f = open('token.txt', 'r')
 updater = Updater(token=f.readline())
 f.close()
 dispatcher = updater.dispatcher
+BLOCK = False
 
 
 def aaa(bot, update):
@@ -255,9 +256,10 @@ def conferma_offerta(bot, update):
 
 	"""
 
-	# if update.message.chat_id != -318148079:
-	# 	return bot.send_message(chat_id=update.message.chat_id,
-	# 	                        text='Utilizza il gruppo ufficiale')
+	if BLOCK:
+		if update.message.chat_id != -318148079:
+			return bot.send_message(chat_id=update.message.chat_id,
+			                        text='Utilizza il gruppo ufficiale')
 
 	user = select_user(update)
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -307,9 +309,25 @@ def conferma_offerta(bot, update):
 
 def conferma_pagamento(bot, update):
 
-	# if update.message.chat_id != -318148079:
-	# 	return bot.send_message(chat_id=update.message.chat_id,
-	# 	                        text='Utilizza il gruppo ufficiale')
+	"""
+	Conferma il pagamento di un'offerta ufficiale ed aggiorna il db di
+	conseguenza. Innanzitutto controlla se i milioni offerti sono sufficienti,
+	dopodichè controlla se si ha effettivamente il budget per completare il
+	pagamento. Se l'offerta risulta valida a tutti gli effetti, verrà
+	aggiornato il budget della squadra in questione, lo status dei calciotori
+	coinvolti, la tabella "offers" e la tabella "pays".
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
+
+	if BLOCK:
+		if update.message.chat_id != -318148079:
+			return bot.send_message(chat_id=update.message.chat_id,
+			                        text='Utilizza il gruppo ufficiale')
 
 	user = select_user(update)
 
@@ -333,6 +351,22 @@ def conferma_pagamento(bot, update):
 
 	mn = mn.split(', ')
 
+	temp_bud = 0
+	for i in mn:
+		try:
+			temp_bud += int(i)
+		except ValueError:
+			temp_bud += int(i.split(': ')[1][:-1])
+
+	if temp_bud < pr:
+		dbf.db_delete(
+				table='pays',
+				where='pay_user = "{}" AND pay_player = "{}"'.format(user, pl))
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text=('Offerta insufficiente.\n' +
+		                              'Milioni mancanti: {}'.format(
+				                              pr - temp_bud)))
+
 	for i in mn:
 		try:
 			int(i)
@@ -347,7 +381,7 @@ def conferma_pagamento(bot, update):
 				table='pays',
 				where='pay_user = "{}" AND pay_player = "{}"'.format(user, pl))
 		return bot.send_message(chat_id=update.message.chat_id,
-		                        text='Budget insufficiente'.format(user))
+		                        text='Budget insufficiente')
 	else:
 		dbf.db_update(
 				table='budgets',
@@ -385,10 +419,59 @@ def conferma_pagamento(bot, update):
 						where='player_name = "{}"'.format(i.split(' (')[0]))
 
 	return bot.send_message(chat_id=update.message.chat_id,
-		                    text='Rosa {} aggiornata'.format(user))
+		                    text=('Rosa {} aggiornata.\n'.format(user) +
+		                          'Budget aggiornato: {}'.format(budget - pr)))
+
+
+def crea_riepilogo(bot, update, dt_now):
+
+	"""
+	Mette insieme i vari messaggi di riepilogo delle offerte:
+
+		- Aperte
+		- Concluse ma non ufficializzate
+		- Ufficializzate
+
+	Utilizzata dentro conferma_offerta() e riepilogo().
+
+	:param bot:
+	:param update:
+	:param dt_now: str, data e ora da trasformare in datetime
+
+	:return: messaggio in chat
+
+	"""
+
+	dt_now = datetime.strptime(dt_now, '%Y-%m-%d %H:%M:%S')
+
+	message1 = 'Aste APERTE, Tempo Rimanente:\n'
+	message2 = 'Aste CONCLUSE, NON Ufficializzate:\n'
+	message3 = ufficializzazioni()
+
+	offers_win, offers_no = aggiorna_offerte_chiuse(dt_now)
+
+	message1 = message_with_offers(offers_win, 1, dt_now, message1)
+	message2 = message_with_offers(offers_no, 2, dt_now, message2)
+
+	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
+	                        text=(message1 + '\n\n\n\n' + message2 +
+	                             '\n\n\n\n' + message3))
 
 
 def message_with_offers(list_of_offers, shift, dt_now, msg):
+
+	"""
+	Crea il messaggio di riepilogo delle offerte.
+	Utilizzata dentro crea_riepilogo().
+
+	:param list_of_offers: list, ogni tuple è un'offerta
+	:param shift: int, per calcolare lo shift in giorni e il tempo rimanente
+	:param dt_now: datetime, data e ora attuali
+	:param msg: str, messaggio da completare
+
+	:return msg: str, messaggio finale
+
+	"""
 
 	for _, tm, pl, pr, dt in list_of_offers:
 		team, roles = dbf.db_select(
@@ -488,42 +571,42 @@ def message_with_payment(user, user_input, offers_user):
 	return money_db, message + '\n\n/conferma_pagamento'
 
 
-def crea_riepilogo(bot, update, dt_now):
-
-	dt_now = datetime.strptime(dt_now, '%Y-%m-%d %H:%M:%S')
-
-	message1 = 'Aste APERTE, Tempo Rimanente:\n'
-	message2 = 'Aste CONCLUSE, NON Ufficializzate:\n'
-	message3 = ufficializzazioni()
-
-	offers_win, offers_no = aggiorna_offerte_chiuse(dt_now)
-
-	message1 = message_with_offers(offers_win, 1, dt_now, message1)
-	message2 = message_with_offers(offers_no, 2, dt_now, message2)
-
-	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
-	                        text=(message1 + '\n\n\n\n' + message2 +
-	                             '\n\n\n\n' + message3))
-
-
 def delete_not_conf_offers_by_others(player_id, user):
 
-	try:
-		old_ids = dbf.db_select(
-				table='offers',
-				columns_in=['offer_id'],
-				where='offer_player_id = {} '.format(player_id) +
-					  'AND offer_status IS NULL AND ' +
-					  'offer_user != "{}"'.format(user))
+	"""
+	Elimina dal db le offerte di altri users per lo stesso giocatore che non
+	sono state confermate.
+	Utilizzata all'interno di conferma_offerta().
 
-		for old_id in old_ids:
-			dbf.db_delete(table='offers', where='offer_id = {}'.format(old_id))
+	:param player_id: int, id del giocatore
+	:param user: str, fantasquadra
 
-	except IndexError:
-		pass
+	:return: Nothing
+
+	"""
+
+	old_ids = dbf.db_select(
+			table='offers',
+			columns_in=['offer_id'],
+			where='offer_player_id = {} '.format(player_id) +
+				  'AND offer_status IS NULL AND ' +
+				  'offer_user != "{}"'.format(user))
+
+	for old_id in old_ids:
+		dbf.db_delete(table='offers', where='offer_id = {}'.format(old_id))
 
 
 def delete_not_conf_offers_by_user(user):
+
+	"""
+	Elimina dal db le offerte dell'user che non sono state confermate.
+	Utilizzata all'interno di conferma_offerta().
+
+	:param user: str, fantasquadra
+
+	:return: Nothing
+
+	"""
 
 	try:
 		old_id = dbf.db_select(
@@ -540,6 +623,16 @@ def delete_not_conf_offers_by_user(user):
 
 def info(bot, update):
 
+	"""
+	Invia in chat le info.
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
+
 	g = open('info.txt', 'r')
 	content = g.readlines()
 	g.close()
@@ -549,14 +642,29 @@ def info(bot, update):
 		row = row.replace('xx\n', ' ')
 		message += row
 
-	bot.send_message(chat_id=update.message.chat_id, text=message)
+	return bot.send_message(chat_id=update.message.chat_id, text=message)
 
 
 def offro(bot, update, args):
 
-	# if update.message.chat_id != -318148079:
-	# 	return bot.send_message(chat_id=update.message.chat_id,
-	# 	                        text='Utilizza il gruppo ufficiale')
+	"""
+	Inserisce nella tabella "offers" del db la nuova offerta presentata.
+	Nel caso in cui l'offerta sia presentata in modo sbagliato invia in chat un
+	messaggio di avviso.
+	Lo status dell'offerta del db sarà NULL, in attesa di conferma.
+
+	:param bot:
+	:param update:
+	:param args: list, input dell'user
+
+	:return: messaggio in chat
+
+	"""
+
+	if BLOCK:
+		if update.message.chat_id != -318148079:
+			return bot.send_message(chat_id=update.message.chat_id,
+			                        text='Utilizza il gruppo ufficiale')
 
 	user = select_user(update)
 
@@ -608,9 +716,21 @@ def offro(bot, update, args):
 
 def pago(bot, update, args):
 
-	# if update.message.chat_id != -318148079:
-	# 	return bot.send_message(chat_id=update.message.chat_id,
-	# 	                        text='Utilizza il gruppo ufficiale')
+	"""
+	Aggiorna la tabella "pays" del db con lo status di "Not Confirmed".
+
+	:param bot:
+	:param update:
+	:param args: list, input dell'user
+
+	:return: messaggio in chat
+
+	"""
+
+	if BLOCK:
+		if update.message.chat_id != -318148079:
+			return bot.send_message(chat_id=update.message.chat_id,
+			                        text='Utilizza il gruppo ufficiale')
 
 	user = select_user(update)
 
@@ -645,6 +765,17 @@ def prezzo(bot, update, args):
 
 
 def print_rosa(bot, update):
+
+	"""
+	Invia in chat un messaggio con la rosa dell'user, il numero di giocatori ed
+	il budget disponibile.
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
 
 	user = select_user(update)
 
@@ -681,21 +812,35 @@ def print_rosa(bot, update):
 
 def riepilogo(bot, update):
 
+	"""
+	Invia in chat il riepilogo delle offerte aperte, chiuse ma non ancora
+	ufficializzate e quelle già ufficializzate.
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
+
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 	return crea_riepilogo(bot, update, dt)
 
 
 def select_offer_to_confirm(user):
+
 	"""
 	Seleziona l'offerta che l'utente deve confermare, se corretta.
 	Ritorna un messaggio esplicativo in caso di assenza di offerte da
 	confermare.
+	Utilizzata all'interno di conferma_offerta().
 
 	:param user: str, squadra di uno dei partecipanti
 
 	:return of_id: int, id dell'offerta
 	:return pl: str, nome del giocatore in questione
+
 	"""
 
 	try:
@@ -712,6 +857,16 @@ def select_offer_to_confirm(user):
 
 
 def select_user(update):
+
+	"""
+	Mappa il nome di colui che invia il comando con la rispettiva fantasquadra.
+	Utilizzata ovunque.
+
+	:param update:
+
+	:return user: str, nome fantasquadra
+
+	"""
 
 	try:
 		user = dbf.db_select(
@@ -732,6 +887,17 @@ def start(bot, update):
 
 def too_late_to_offer(time_now, time_before):
 
+	"""
+	Controlla se si è ancora in tempo per rilanciare un'offerta.
+	Utilizzata all'interno di check_offer_value().
+
+	:param time_now: str, data e ora attuali da formattare in datetime
+	:param time_before: str, data e ora precedenti da formattare in datetime
+
+	:return: bool, True se troppo tardi altrimenti False
+
+	"""
+
 	time_now = datetime.strptime(time_now, '%Y-%m-%d %H:%M:%S')
 	time_before = datetime.strptime(time_before, '%Y-%m-%d %H:%M:%S')
 
@@ -744,6 +910,14 @@ def too_late_to_offer(time_now, time_before):
 
 
 def ufficializzazioni():
+
+	"""
+	Crea il messaggio con le offerte già ufficializzate.
+	Utilizzata all'interno di crea_riepilogo().
+
+	:return message: str, messaggio
+
+	"""
 
 	message = 'Ufficializzazioni:\n'
 
