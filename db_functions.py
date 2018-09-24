@@ -5,39 +5,6 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 
-def check_before_play(bet_id):
-
-    """
-    Return all the matches in the 'Pending' bet which have been played
-    already or started.
-
-    :param bet_id: int
-
-
-    :return: list of tuples, (user, datetime, team1, team2)
-    """
-
-    invalid_matches = []
-
-    time_now = datetime.datetime.now()
-
-    matches = db_select(
-            table='bets INNER JOIN predictions on pred_bet = bet_id',
-            columns_in=['pred_id', 'pred_user', 'pred_date', 'pred_team1',
-                        'pred_team2'],
-            where='bet_id = {}'.format(bet_id))
-
-    for match in matches:
-        match_date = datetime.datetime.strptime(match[2], '%Y-%m-%d %H:%M:%S')
-        if match_date < time_now:
-            invalid_matches.append(match[1:])
-            db_delete(
-                    table='predictions',
-                    where='pred_id = {}'.format(match[0]))
-
-    return invalid_matches
-
-
 def db_delete(table, where):
 
     """

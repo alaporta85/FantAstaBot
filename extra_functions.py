@@ -9,7 +9,7 @@ from nltk.util import ngrams
 def jaccard_result(input_option, all_options, ngrm):
 
 	"""
-	Trova il giocatore corrispondente a quello inserito dall'user.
+	Trova il valore esatto corrispondente a quello inserito dall'user.
 
 	:param input_option: str
 

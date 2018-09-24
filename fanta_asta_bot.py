@@ -458,6 +458,56 @@ def crea_riepilogo(bot, update, dt_now):
 	                             '\n\n\n\n' + message3))
 
 
+def delete_not_conf_offers_by_others(player_id, user):
+
+	"""
+	Elimina dal db le offerte di altri users per lo stesso giocatore che non
+	sono state confermate.
+	Utilizzata all'interno di conferma_offerta().
+
+	:param player_id: int, id del giocatore
+	:param user: str, fantasquadra
+
+	:return: Nothing
+
+	"""
+
+	old_ids = dbf.db_select(
+			table='offers',
+			columns_in=['offer_id'],
+			where='offer_player_id = {} '.format(player_id) +
+				  'AND offer_status IS NULL AND ' +
+				  'offer_user != "{}"'.format(user))
+
+	for old_id in old_ids:
+		dbf.db_delete(table='offers', where='offer_id = {}'.format(old_id))
+
+
+def delete_not_conf_offers_by_user(user):
+
+	"""
+	Elimina dal db le offerte dell'user che non sono state confermate.
+	Utilizzata all'interno di conferma_offerta().
+
+	:param user: str, fantasquadra
+
+	:return: Nothing
+
+	"""
+
+	try:
+		old_id = dbf.db_select(
+				table='offers',
+				columns_in=['offer_id'],
+				where='offer_user = "{}" '.format(user) +
+					  'AND offer_status IS NULL')[0]
+
+		dbf.db_delete(table='offers', where='offer_id = {}'.format(old_id))
+
+	except IndexError:
+		pass
+
+
 def message_with_offers(list_of_offers, shift, dt_now, msg):
 
 	"""
@@ -569,56 +619,6 @@ def message_with_payment(user, user_input, offers_user):
 		message += '\n\t\t- <b>{}</b>'.format(money)
 
 	return money_db, message + '\n\n/conferma_pagamento'
-
-
-def delete_not_conf_offers_by_others(player_id, user):
-
-	"""
-	Elimina dal db le offerte di altri users per lo stesso giocatore che non
-	sono state confermate.
-	Utilizzata all'interno di conferma_offerta().
-
-	:param player_id: int, id del giocatore
-	:param user: str, fantasquadra
-
-	:return: Nothing
-
-	"""
-
-	old_ids = dbf.db_select(
-			table='offers',
-			columns_in=['offer_id'],
-			where='offer_player_id = {} '.format(player_id) +
-				  'AND offer_status IS NULL AND ' +
-				  'offer_user != "{}"'.format(user))
-
-	for old_id in old_ids:
-		dbf.db_delete(table='offers', where='offer_id = {}'.format(old_id))
-
-
-def delete_not_conf_offers_by_user(user):
-
-	"""
-	Elimina dal db le offerte dell'user che non sono state confermate.
-	Utilizzata all'interno di conferma_offerta().
-
-	:param user: str, fantasquadra
-
-	:return: Nothing
-
-	"""
-
-	try:
-		old_id = dbf.db_select(
-				table='offers',
-				columns_in=['offer_id'],
-				where='offer_user = "{}" '.format(user) +
-					  'AND offer_status IS NULL')[0]
-
-		dbf.db_delete(table='offers', where='offer_id = {}'.format(old_id))
-
-	except IndexError:
-		pass
 
 
 def info(bot, update):
@@ -755,13 +755,6 @@ def pago(bot, update, args):
 
 	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
 	                        text=message)
-
-
-def prezzo(bot, update, args):
-
-	if not args:
-		return bot.send_message(chat=update.message.chat_id,
-		                        text='Inserire giocatore e squadra.')
 
 
 def print_rosa(bot, update):
