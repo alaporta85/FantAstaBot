@@ -523,7 +523,7 @@ def message_with_payment(user, user_input, offers_user):
 	new_pls = []
 	for i, pl in enumerate(pls):
 		if not i:
-			pl2 = ef.jaccard_player(pl, offers_user)
+			pl2 = ef.jaccard_result(pl.upper(), offers_user, 3)
 
 			off_id, price = dbf.db_select(
 					table='offers',
@@ -547,7 +547,7 @@ def message_with_payment(user, user_input, offers_user):
 			           'Prezzo: <b>{}</b>.\n\nPagamento:\n'.format(price))
 
 		else:
-			pl2 = ef.jaccard_player(pl, rosa)
+			pl2 = ef.jaccard_result(pl.upper(), rosa, 3)
 			tm, rls, pr = dbf.db_select(
 					table='players',
 					columns_in=['player_team', 'player_roles', 'player_price'],
@@ -679,7 +679,7 @@ def offro(bot, update, args):
 	all_teams = list(set(dbf.db_select(
 					table='players',
 					columns_in=['player_team'])))
-	j_tm = ef.jaccard_team(team, all_teams)
+	j_tm = ef.jaccard_result(team[:3].upper(), all_teams, 3)
 	j_pl = dbf.db_select(
 					table='players',
 					columns_in=['player_name'],
@@ -688,7 +688,7 @@ def offro(bot, update, args):
 		return bot.send_message(chat_id=update.message.chat_id,
 		                        text='Squadra inesistente')
 
-	pl = ef.jaccard_player(pl, j_pl)
+	pl = ef.jaccard_result(pl.upper(), j_pl, 3)
 	pl_id = dbf.db_select(
 			table='players',
 			columns_in=['player_id'],

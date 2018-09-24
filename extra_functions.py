@@ -6,66 +6,40 @@ from nltk.metrics.distance import jaccard_distance
 from nltk.util import ngrams
 
 
-def jaccard_player(input_player, all_players):
+def jaccard_result(input_option, all_options, ngrm):
 
 	"""
 	Trova il giocatore corrispondente a quello inserito dall'user.
 
-	:param input_player: str
+	:param input_option: str
 
-	:param all_players: list of str
+	:param all_options: list of str
+
+	:param ngrm: int, lunghezza degli ngrammi
 
 
-	:return jac_player: str
+	:return jac_res: str
 
 	"""
 
-	dist = 10
-	tri_guess = set(ngrams(input_player.upper(), 3))
-	jac_player = ''
+	dist = 1
+	tri_guess = set(ngrams(input_option, ngrm))
+	jac_res = ''
 
-	for pl in all_players:
-		p = pl.replace(' ', '')
-		trit = set(ngrams(p, 3))
+	for opt in all_options:
+		p = opt.replace(' ', '')
+		trit = set(ngrams(p, ngrm))
 		jd = jaccard_distance(tri_guess, trit)
 		if not jd:
-			return pl
+			return opt
 		elif jd < dist:
 			dist = jd
-			jac_player = pl
+			jac_res = opt
 
-	return jac_player
+	if not jac_res:
+		return jaccard_result(input_option, all_options, ngrm - 1)
 
-
-def jaccard_team(input_team, all_teams):
-
-	"""
-	Trova il giocatore corrispondente a quello inserito dall'user.
-
-	:param input_player: str
-
-	:param all_players: list of str
-
-
-	:return jac_player: str
-
-	"""
-
-	dist = 10
-	tri_guess = set(ngrams(input_team[:3].upper(), 2))
-	jac_team = ''
-
-	for tm in all_teams:
-		p = tm.replace(' ', '')
-		trit = set(ngrams(p, 2))
-		jd = jaccard_distance(tri_guess, trit)
-		if not jd:
-			return tm
-		elif jd < dist:
-			dist = jd
-			jac_team = tm
-
-	return jac_team
+	return jac_res
 
 
 def correggi_file_asta():
@@ -90,7 +64,7 @@ def correggi_file_asta():
 			pl, tm = temp_pl.loc[j, temp_pl.columns[0:2]]
 			flt_df = players[players['player_team'] == tm.upper()]
 			names = flt_df['player_name'].values
-			correct_pl = jaccard_player(pl, names)
+			correct_pl = jaccard_result(pl, names, 3)
 			asta.loc[j, [asta.columns[i],
 			             asta.columns[i+1]]] = correct_pl, tm.upper()
 		pass
