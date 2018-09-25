@@ -36,8 +36,11 @@ def jaccard_result(input_option, all_options, ngrm):
 			dist = jd
 			jac_res = opt
 
-	if not jac_res:
+	if not jac_res and ngrm > 2:
 		return jaccard_result(input_option, all_options, ngrm - 1)
+
+	elif not jac_res and ngrm == 2:
+		return False
 
 	return jac_res
 

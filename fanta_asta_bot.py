@@ -9,6 +9,9 @@ updater = Updater(token=f.readline())
 f.close()
 dispatcher = updater.dispatcher
 BLOCK = False
+jac_message = ("Impossibile riconoscere l'input. Corregere eventuali errori " +
+               "di scrittura o controllare che l'ordine di inserimento " +
+               "sia corretto.")
 
 
 def aaa(bot, update):
@@ -508,6 +511,30 @@ def delete_not_conf_offers_by_user(user):
 		pass
 
 
+def info(bot, update):
+
+	"""
+	Invia in chat le info.
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
+
+	g = open('info.txt', 'r')
+	content = g.readlines()
+	g.close()
+
+	message = ''
+	for row in content:
+		row = row.replace('xx\n', ' ')
+		message += row
+
+	return bot.send_message(chat_id=update.message.chat_id, text=message)
+
+
 def message_with_offers(list_of_offers, shift, dt_now, msg):
 
 	"""
@@ -540,12 +567,14 @@ def message_with_offers(list_of_offers, shift, dt_now, msg):
 	return msg
 
 
-def message_with_payment(user, user_input, offers_user):
+def message_with_payment(bot, update, user, user_input, offers_user):
 
 	"""
 	Crea il messaggio di riepilogo del pagamento.
 	Utilizzato all'interno della funzione pago().
 
+	:param bot:
+	:param update:
 	:param user: str, nome della fantasquadra
 	:param user_input: list, [giocatore da pagare, metodo di pagamento]
 	:param offers_user: list, tutte le offerte dell'user in stato Not Official
@@ -574,6 +603,9 @@ def message_with_payment(user, user_input, offers_user):
 	for i, pl in enumerate(pls):
 		if not i:
 			pl2 = ef.jaccard_result(pl.upper(), offers_user, 3)
+			if not pl2:
+				return bot.send_message(chat_id=update.message.chat_id,
+				                        text=jac_message)
 
 			off_id, price = dbf.db_select(
 					table='offers',
@@ -598,6 +630,10 @@ def message_with_payment(user, user_input, offers_user):
 
 		else:
 			pl2 = ef.jaccard_result(pl.upper(), rosa, 3)
+			if not pl2:
+				return bot.send_message(chat_id=update.message.chat_id,
+				                        text=jac_message)
+
 			tm, rls, pr = dbf.db_select(
 					table='players',
 					columns_in=['player_team', 'player_roles', 'player_price'],
@@ -619,30 +655,6 @@ def message_with_payment(user, user_input, offers_user):
 		message += '\n\t\t- <b>{}</b>'.format(money)
 
 	return money_db, message + '\n\n/conferma_pagamento'
-
-
-def info(bot, update):
-
-	"""
-	Invia in chat le info.
-
-	:param bot:
-	:param update:
-
-	:return: messaggio in chat
-
-	"""
-
-	g = open('info.txt', 'r')
-	content = g.readlines()
-	g.close()
-
-	message = ''
-	for row in content:
-		row = row.replace('xx\n', ' ')
-		message += row
-
-	return bot.send_message(chat_id=update.message.chat_id, text=message)
 
 
 def offro(bot, update, args):
@@ -680,6 +692,9 @@ def offro(bot, update, args):
 					table='players',
 					columns_in=['player_team'])))
 	j_tm = ef.jaccard_result(team[:3].upper(), all_teams, 3)
+	if not j_tm:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text=jac_message)
 	j_pl = dbf.db_select(
 					table='players',
 					columns_in=['player_name'],
@@ -689,6 +704,9 @@ def offro(bot, update, args):
 		                        text='Squadra inesistente')
 
 	pl = ef.jaccard_result(pl.upper(), j_pl, 3)
+	if not pl:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text=jac_message)
 	pl_id = dbf.db_select(
 			table='players',
 			columns_in=['player_id'],
@@ -712,6 +730,35 @@ def offro(bot, update, args):
 							     '<b>{}   ({})   {}</b>'.
 							format(pl, team, roles) +
 							'\n\n/conferma_offerta')
+
+
+def order_by_role(user):
+
+	"""
+	Ordina la lista dei giocatori in base al loro ruolo.
+	Utilizzata all'interno di print_rosa().
+
+	:param user: str, fantasquadra
+
+	:return rosa: list, ogni elemento è un tuple
+
+	"""
+
+	roles_dict = {'Por': 1, 'Dc': 2, 'Dd': 2, 'Ds': 2, 'E': 4, 'M': 4, 'C': 5,
+	              'W': 6, 'T': 6, 'A': 7, 'Pc': 7}
+
+	rosa = dbf.db_select(
+			table='players',
+			columns_in=['player_name', 'player_team', 'player_roles'],
+			where='player_status = "{}"'.format(user))
+
+	rosa = [(el[0], el[1], el[2], roles_dict[el[2].split(';')[0]]) for
+	        el in rosa]
+	rosa.sort(key=lambda x: x[3])
+
+	rosa = [el[:-1] for el in rosa]
+
+	return rosa
 
 
 def pago(bot, update, args):
@@ -745,7 +792,8 @@ def pago(bot, update, args):
 		return bot.send_message(chat_id=update.message.chat_id,
 		                        text=check_pago_format(args, user))
 
-	money_db, message = message_with_payment(user, args, offers_user)
+	money_db, message = message_with_payment(bot, update, user, args,
+	                                         offers_user)
 
 	dbf.db_update(
 			table='pays',
@@ -754,6 +802,60 @@ def pago(bot, update, args):
 			where='pay_user = "{}" AND pay_status IS NULL'.format(user))
 
 	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
+	                        text=message)
+
+
+def prezzo(bot, update, args):
+
+	"""
+	Restituisce il prezzo di un calciatore.
+
+	:param bot:
+	:param update:
+	:param args: list, input dell'user
+
+	:return: messaggio in chat
+
+	"""
+
+	if not args:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text=('Inserire giocatore e squadra.\n' +
+		                        'Ex: /prezzo higuain, milan'))
+
+	pl, tm = ''.join(args).split(',')
+
+	tm = ef.jaccard_result(tm.upper(),
+	                       dbf.db_select(
+			                       table='players',
+			                       columns_in=['player_team']), 3)
+	if not tm:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text=jac_message)
+
+	pl = ef.jaccard_result(pl.upper(),
+	                       dbf.db_select(
+			                       table='players',
+			                       columns_in=['player_name'],
+	                               where='player_team = "{}"'.format(tm)), 3)
+	if not pl:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text=jac_message)
+
+	rl, pr, st = dbf.db_select(
+			table='players',
+            columns_in=['player_roles', 'player_price', 'player_status'],
+			where='player_name = "{}"'.format(pl))[0]
+
+	if st == 'FREE':
+		st = 'Svincolato'
+
+	message = ('\t\t\t\t<b>{}</b> <i>({})   {}</i>\n\n'.format(pl, tm, rl) +
+	           'Squadra: <i>{}</i>\n'.format(st) +
+	           'Prezzo: <b>{}</b>'.format(pr))
+
+	return bot.send_message(parse_mode='HTML',
+	                        chat_id=update.message.chat_id,
 	                        text=message)
 
 
@@ -774,21 +876,9 @@ def print_rosa(bot, update):
 
 	message = '<i>{}</i> :\n'.format(user)
 
-	roles_dict = {'Por': 1, 'Dc': 2, 'Dd': 2, 'Ds': 2, 'E': 4, 'M': 4, 'C': 5,
-	              'W': 6, 'T': 6, 'A': 7, 'Pc': 7}
+	rosa = order_by_role(user)
 
-	rosa1 = dbf.db_select(
-			table='players',
-			columns_in=['player_name', 'player_team', 'player_roles'],
-			where='player_status = "{}"'.format(user))
-
-	rosa2 = [(el[0], el[1], el[2], roles_dict[el[2].split(';')[0]]) for
-	         el in rosa1]
-	rosa2.sort(key=lambda x: x[3])
-
-	rosa3 = [el[:-1] for el in rosa2]
-
-	for pl, tm, rl in rosa3:
+	for pl, tm, rl in rosa:
 		message += '\n\t\t\t<b>{}</b> ({})     {}'.format(pl, tm, rl)
 
 	budget = dbf.db_select(
@@ -796,7 +886,7 @@ def print_rosa(bot, update):
 			columns_in=['budget_value'],
 			where='budget_team = "{}"'.format(user))[0]
 
-	message += ('\n\nNumero di giocatori: <b>{}</b>\n'.format(len(rosa3)) +
+	message += ('\n\nNumero di giocatori: <b>{}</b>\n'.format(len(rosa)) +
 	            'Milioni disponibili: <b>{}</b>'.format(budget))
 
 	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
@@ -945,6 +1035,7 @@ conferma_pagamento_handler = CommandHandler('conferma_pagamento',
                                             conferma_pagamento)
 offro_handler = CommandHandler('offro', offro, pass_args=True)
 pago_handler = CommandHandler('pago', pago, pass_args=True)
+prezzo_handler = CommandHandler('prezzo', prezzo, pass_args=True)
 info_handler = CommandHandler('info', info)
 riepilogo_handler = CommandHandler('riepilogo', riepilogo)
 rosa_handler = CommandHandler('rosa', print_rosa)
@@ -955,6 +1046,7 @@ dispatcher.add_handler(conferma_pagamento_handler)
 dispatcher.add_handler(offro_handler)
 dispatcher.add_handler(info_handler)
 dispatcher.add_handler(pago_handler)
+dispatcher.add_handler(prezzo_handler)
 dispatcher.add_handler(riepilogo_handler)
 dispatcher.add_handler(rosa_handler)
 
