@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import db_functions as dbf
 import extra_functions as ef
+import selenium_function as sf
 from telegram.ext import Updater, CommandHandler
 
 
@@ -421,9 +422,22 @@ def conferma_pagamento(bot, update):
 						values=['FREE'],
 						where='player_name = "{}"'.format(i.split(' (')[0]))
 
-	return bot.send_message(chat_id=update.message.chat_id,
-		                    text=('Rosa {} aggiornata.\n'.format(user) +
-		                          'Budget aggiornato: {}'.format(budget - pr)))
+	bot.send_message(chat_id=update.message.chat_id,
+	                 text=('Rosa {} aggiornata.\n'.format(user) +
+	                       'Budget aggiornato: {}'.format(budget - pr)))
+
+	mn2 = []
+	for i in mn:
+		try:
+			int(i)
+		except ValueError:
+			mn2.append(i)
+
+	browser = sf.login()
+	if mn2:
+		cessioni = [el.split(' (')[0] for el in mn2]
+		sf.aggiorna_cessioni(browser, user, cessioni)
+	sf.aggiorna_acquisti(browser, user, pl)
 
 
 def crea_riepilogo(bot, update, dt_now):
@@ -1033,18 +1047,18 @@ aaa_handler = CommandHandler('aaa', aaa)
 conferma_offerta_handler = CommandHandler('conferma_offerta', conferma_offerta)
 conferma_pagamento_handler = CommandHandler('conferma_pagamento',
                                             conferma_pagamento)
+info_handler = CommandHandler('info', info)
 offro_handler = CommandHandler('offro', offro, pass_args=True)
 pago_handler = CommandHandler('pago', pago, pass_args=True)
 prezzo_handler = CommandHandler('prezzo', prezzo, pass_args=True)
-info_handler = CommandHandler('info', info)
 riepilogo_handler = CommandHandler('riepilogo', riepilogo)
 rosa_handler = CommandHandler('rosa', print_rosa)
 
 dispatcher.add_handler(aaa_handler)
 dispatcher.add_handler(conferma_offerta_handler)
 dispatcher.add_handler(conferma_pagamento_handler)
-dispatcher.add_handler(offro_handler)
 dispatcher.add_handler(info_handler)
+dispatcher.add_handler(offro_handler)
 dispatcher.add_handler(pago_handler)
 dispatcher.add_handler(prezzo_handler)
 dispatcher.add_handler(riepilogo_handler)

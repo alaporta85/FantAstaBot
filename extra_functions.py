@@ -6,6 +6,104 @@ from nltk.metrics.distance import jaccard_distance
 from nltk.util import ngrams
 
 
+def aggiorna_db_con_nuove_quotazioni():
+
+	"""
+	Aggiorna tutte le quotazioni dei calciatori prima di ogni mercato.
+	Gestisce anche i trasferimenti interni alla Serie A aggiornando la
+	squadra di appartenenza e l'arrivo di nuovi calciatori.
+
+	"""
+
+	mercati = ['PrimoMercato', 'SecondoMercato', 'TerzoMercato']
+
+	last = ''
+
+	for i in mercati:
+		name = os.getcwd() + '/Quotazioni_' + i + '.xlsx'
+		if os.path.isfile(name):
+			last = name
+
+	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
+
+	for x in range(len(players)):
+		role, pl, team, price = players.iloc[x].values
+
+		if pl in players['Nome'].values:
+			dbf.db_update(
+					table='players',
+					columns=['player_team', 'player_price'],
+					values=[team[:3].upper(), price],
+					where='player_name = "{}"'.format(pl))
+		else:
+			dbf.db_insert(
+					table='players',
+					columns=['player_name', 'player_team',
+					         'player_roles', 'player_price'],
+					values=[pl, team[:3].upper(), role, price])
+
+	del players
+
+
+def aggiorna_status_calciatori():
+
+	"""
+	Aggiorna lo status di ogni calciatore nella tabella "players" del db.
+	Lo status sarà la fantasquadra proprietaria del giocatore mentre ogni
+	giocatore svincolato avrà status = FREE.
+
+	"""
+
+	asta = pd.read_excel(os.getcwd() + '/Asta2018.xlsx',
+	                     sheet_name="Foglio1-1", usecols=range(0, 24, 3))
+
+	for team in asta.columns:
+		pls = asta[team].dropna()
+		for pl in pls:
+			dbf.db_update(
+					table='players',
+					columns=['player_status'],
+					values=[team], where='player_name = "{}"'.format(pl))
+
+	dbf.db_update(
+			table='players',
+			columns=['player_status'],
+			values=['FREE'], where='player_status IS NULL')
+
+
+def correggi_file_asta():
+
+	"""
+	Crea una copia del file originale contenente le rose definite il giorno
+	dell'asta ma con i nomi dei calciatori corretti secondo il formato di
+	Fantagazzetta.
+
+	"""
+
+	asta = pd.read_excel(os.getcwd() + '/Asta2018.xlsx',
+	                     header=0, sheet_name="Foglio1")
+	players = dbf.db_select(
+			table='players',
+			columns_in=['player_name', 'player_team'],
+			dataframe=True)
+
+	for i in range(0, len(asta.columns), 3):
+		temp_pl = asta[asta.columns[i:i+3]].dropna()
+		for j in range(len(temp_pl)):
+			pl, tm = temp_pl.loc[j, temp_pl.columns[0:2]]
+			flt_df = players[players['player_team'] == tm.upper()]
+			names = flt_df['player_name'].values
+			correct_pl = jaccard_result(pl, names, 3)
+			asta.loc[j, [asta.columns[i],
+			             asta.columns[i+1]]] = correct_pl, tm.upper()
+		pass
+
+	writer = ExcelWriter('Asta2018_2.xlsx', engine='openpyxl')
+	asta.to_excel(writer, sheet_name='Foglio1')
+	writer.save()
+	writer.close()
+
+
 def jaccard_result(input_option, all_options, ngrm):
 
 	"""
@@ -45,39 +143,6 @@ def jaccard_result(input_option, all_options, ngrm):
 	return jac_res
 
 
-def correggi_file_asta():
-
-	"""
-	Crea una copia del file originale contenente le rose definite il giorno
-	dell'asta ma con i nomi dei calciatori corretti secondo il formato di
-	Fantagazzetta.
-
-	"""
-
-	asta = pd.read_excel(os.getcwd() + '/Asta2018.xlsx',
-	                     header=0, sheet_name="Foglio1")
-	players = dbf.db_select(
-			table='players',
-			columns_in=['player_name', 'player_team'],
-			dataframe=True)
-
-	for i in range(0, len(asta.columns), 3):
-		temp_pl = asta[asta.columns[i:i+3]].dropna()
-		for j in range(len(temp_pl)):
-			pl, tm = temp_pl.loc[j, temp_pl.columns[0:2]]
-			flt_df = players[players['player_team'] == tm.upper()]
-			names = flt_df['player_name'].values
-			correct_pl = jaccard_result(pl, names, 3)
-			asta.loc[j, [asta.columns[i],
-			             asta.columns[i+1]]] = correct_pl, tm.upper()
-		pass
-
-	writer = ExcelWriter('Asta2018_2.xlsx', engine='openpyxl')
-	asta.to_excel(writer, sheet_name='Foglio1')
-	writer.save()
-	writer.close()
-
-
 def quotazioni_iniziali():
 
 	"""
@@ -98,71 +163,6 @@ def quotazioni_iniziali():
 				columns=['player_name', 'player_team',
 				         'player_roles', 'player_price'],
 				values=[name, team[:3].upper(), role, price])
-
-	del players
-
-
-def aggiorna_status_calciatori():
-
-	"""
-	Aggiorna lo status di ogni calciatore nella tabella "players" del db.
-	Lo status sarà la fantasquadra proprietaria del giocatore mentre ogni
-	giocatore svincolato avrà status = FREE.
-
-	"""
-
-	asta = pd.read_excel(os.getcwd() + '/Asta2018.xlsx',
-	                     sheet_name="Foglio1-1", usecols=range(0, 24, 3))
-
-	for team in asta.columns:
-		pls = asta[team].dropna()
-		for pl in pls:
-			dbf.db_update(
-					table='players',
-					columns=['player_status'],
-					values=[team], where='player_name = "{}"'.format(pl))
-
-	dbf.db_update(
-			table='players',
-			columns=['player_status'],
-			values=['FREE'], where='player_status IS NULL')
-
-
-def aggiorna_db_con_nuove_quotazioni():
-
-	"""
-	Aggiorna tutte le quotazioni dei calciatori prima di ogni mercato.
-	Gestisce anche i trasferimenti interni alla Serie A aggiornando la
-	squadra di appartenenza e l'arrivo di nuovi calciatori.
-
-	"""
-
-	mercati = ['PrimoMercato', 'SecondoMercato', 'TerzoMercato']
-
-	last = ''
-
-	for i in mercati:
-		name = os.getcwd() + '/Quotazioni_' + i + '.xlsx'
-		if os.path.isfile(name):
-			last = name
-
-	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
-
-	for x in range(len(players)):
-		role, pl, team, price = players.iloc[x].values
-
-		if pl in players['Nome'].values:
-			dbf.db_update(
-					table='players',
-					columns=['player_team', 'player_price'],
-					values=[team[:3].upper(), price],
-					where='player_name = "{}"'.format(pl))
-		else:
-			dbf.db_insert(
-					table='players',
-					columns=['player_name', 'player_team',
-					         'player_roles', 'player_price'],
-					values=[pl, team[:3].upper(), role, price])
 
 	del players
 
