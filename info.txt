@@ -1,10 +1,10 @@
-Questo bot ha 6 comandi che permetteranno di effettuare tutte le operazionixx
+Questo bot ha 7 comandi che permetteranno di effettuare tutte le operazionixx
 necessarie in sede di mercato.
 
 1) /offro: Utilizzato sia per presentare una nuova offerta sia per rilanciarexx
 un'offerta già esistente. L'offerta DEVE essere presentata nella forma
 
-          offerta, nome, squadra del calciatore
+          /offro offerta, nome, squadra del calciatore
 
 Se ad esempio volessi offrire 20 per Petagna il comando sarebbe:
 
@@ -23,7 +23,7 @@ lettere o le abbreviazioni (juve, samp, fiore, toro, ecc) sono comunque validi.
 2) /pago: Utilizzato per ufficializzare le aste concluse ed effettuare ilxx
 pagamento. Il comando DEVE avere la forma
 
-          nome, modo di pagamento
+          /pago nome, modo di pagamento
 
 Se ad esempio dovessi pagare i 20 di Petagna con Schick + 5 milioni:
 
@@ -44,3 +44,9 @@ ufficializzate
 
 
 6) /rosa: mostra la rosa aggiornata di colui che invia il comando
+
+
+7) /prezzo: mostra il prezzo del giocatore richiesto e la fantasquadra dixx
+appartenenza (o lo status di svincolato). Il comando DEVE avere la forma:
+
+          /prezzo nome, squadra del calciatore
