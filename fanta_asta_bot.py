@@ -10,6 +10,8 @@ updater = Updater(token=f.readline())
 f.close()
 dispatcher = updater.dispatcher
 BLOCK = False
+group_id = -318148079
+polps_id = 67507055
 jac_message = ("Impossibile riconoscere l'input. Corregere eventuali errori " +
                "di scrittura o controllare che l'ordine di inserimento " +
                "sia corretto.")
@@ -261,7 +263,7 @@ def conferma_offerta(bot, update):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != -318148079:
+		if update.message.chat_id != group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
 			                        text='Utilizza il gruppo ufficiale')
 
@@ -329,7 +331,7 @@ def conferma_pagamento(bot, update):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != -318148079:
+		if update.message.chat_id != group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
 			                        text='Utilizza il gruppo ufficiale')
 
@@ -426,18 +428,19 @@ def conferma_pagamento(bot, update):
 	                 text=('Rosa {} aggiornata.\n'.format(user) +
 	                       'Budget aggiornato: {}'.format(budget - pr)))
 
-	mn2 = []
-	for i in mn:
-		try:
-			int(i)
-		except ValueError:
-			mn2.append(i)
+	if update.message.chat_id == polps_id:
+		mn2 = []
+		for i in mn:
+			try:
+				int(i)
+			except ValueError:
+				mn2.append(i)
 
-	browser = sf.login()
-	if mn2:
-		cessioni = [el.split(' (')[0] for el in mn2]
-		sf.aggiorna_cessioni(browser, user, cessioni)
-	sf.aggiorna_acquisti(browser, user, pl)
+		browser = sf.login()
+		if mn2:
+			cessioni = [el.split(' (')[0] for el in mn2]
+			sf.aggiorna_cessioni(browser, user, cessioni)
+		sf.aggiorna_acquisti(browser, user, pl)
 
 
 def crea_riepilogo(bot, update, dt_now):
@@ -536,6 +539,10 @@ def info(bot, update):
 	:return: messaggio in chat
 
 	"""
+
+	if update.message.chat_id == group_id:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text='Utilizza la chat privata')
 
 	g = open('info.txt', 'r')
 	content = g.readlines()
@@ -688,7 +695,7 @@ def offro(bot, update, args):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != -318148079:
+		if update.message.chat_id != group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
 			                        text='Utilizza il gruppo ufficiale')
 
@@ -789,7 +796,7 @@ def pago(bot, update, args):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != -318148079:
+		if update.message.chat_id != group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
 			                        text='Utilizza il gruppo ufficiale')
 
@@ -832,7 +839,11 @@ def prezzo(bot, update, args):
 
 	"""
 
-	if not args:
+	if update.message.chat_id == group_id:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text='Utilizza la chat privata')
+
+	if len(args) != 2:
 		return bot.send_message(chat_id=update.message.chat_id,
 		                        text=('Inserire giocatore e squadra.\n' +
 		                        'Ex: /prezzo higuain, milan'))
@@ -885,6 +896,10 @@ def print_rosa(bot, update):
 	:return: messaggio in chat
 
 	"""
+
+	if update.message.chat_id == group_id:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
@@ -1043,7 +1058,7 @@ def ufficializzazioni():
 	return message
 
 
-aaa_handler = CommandHandler('aaa', aaa)
+# aaa_handler = CommandHandler('aaa', aaa)
 conferma_offerta_handler = CommandHandler('conferma_offerta', conferma_offerta)
 conferma_pagamento_handler = CommandHandler('conferma_pagamento',
                                             conferma_pagamento)
@@ -1054,7 +1069,7 @@ prezzo_handler = CommandHandler('prezzo', prezzo, pass_args=True)
 riepilogo_handler = CommandHandler('riepilogo', riepilogo)
 rosa_handler = CommandHandler('rosa', print_rosa)
 
-dispatcher.add_handler(aaa_handler)
+# dispatcher.add_handler(aaa_handler)
 dispatcher.add_handler(conferma_offerta_handler)
 dispatcher.add_handler(conferma_pagamento_handler)
 dispatcher.add_handler(info_handler)
