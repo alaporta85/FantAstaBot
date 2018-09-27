@@ -1,6 +1,9 @@
 Questo bot ha 7 comandi che permetteranno di effettuare tutte le operazionixx
 necessarie in sede di mercato.
 
+IMPORTANTE: Ogni comando DEVE essere inviato in chat privata con il bot.xx
+Nel gruppo ufficiale verranno inviati tutti i riepiloghi.
+
 1) /offro: Utilizzato sia per presentare una nuova offerta sia per rilanciarexx
 un'offerta già esistente. L'offerta DEVE essere presentata nella forma
 

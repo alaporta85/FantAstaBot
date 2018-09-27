@@ -18,6 +18,7 @@ jac_message = ("Impossibile riconoscere l'input. Corregere eventuali errori " +
 
 
 def aaa(bot, update):
+
 	user = select_user(update)
 	dbf.db_update(
 			table='offers',
@@ -263,9 +264,9 @@ def conferma_offerta(bot, update):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != group_id:
+		if update.message.chat_id == group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza il gruppo ufficiale')
+			                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -310,7 +311,9 @@ def conferma_offerta(bot, update):
 			values=['Lost'],
 			where='offer_id = {}'.format(last_valid_offer))
 
-	crea_riepilogo(bot, update, dt)
+	message = crea_riepilogo(dt)
+
+	return bot.send_message(parse_mode='HTML', chat_id=group_id, text=message)
 
 
 def conferma_pagamento(bot, update):
@@ -331,9 +334,9 @@ def conferma_pagamento(bot, update):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != group_id:
+		if update.message.chat_id == group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza il gruppo ufficiale')
+			                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
@@ -424,26 +427,41 @@ def conferma_pagamento(bot, update):
 						values=['FREE'],
 						where='player_name = "{}"'.format(i.split(' (')[0]))
 
-	bot.send_message(chat_id=update.message.chat_id,
-	                 text=('Rosa {} aggiornata.\n'.format(user) +
-	                       'Budget aggiornato: {}'.format(budget - pr)))
+	# bot.send_message(chat_id=update.message.chat_id,
+	#                  text=('Rosa {} aggiornata.\n'.format(user) +
+	#                        'Budget aggiornato: {}'.format(budget - pr)))
 
-	if update.message.chat_id == polps_id:
-		mn2 = []
-		for i in mn:
-			try:
-				int(i)
-			except ValueError:
-				mn2.append(i)
+	price, payment = dbf.db_select(
+			table='pays',
+			columns_in=['pay_price', 'pay_money'],
+			where='pay_player = "{}"'.format(pl))[0]
 
-		browser = sf.login()
-		if mn2:
-			cessioni = [el.split(' (')[0] for el in mn2]
-			sf.aggiorna_cessioni(browser, user, cessioni)
-		sf.aggiorna_acquisti(browser, user, pl)
+	message = ('<i>{}</i> ha ufficializzato '.format(user) +
+	           '<b>{}</b> a {}.'.format(pl, price) +
+	           '\n\nPagamento: {}'.format(payment))
+
+	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+	bot.send_message(parse_mode='HTML', chat_id=group_id,
+	                 text=(message + '\n\n' + '_'*30 + '\n\n\n' +
+	                       crea_riepilogo(dt)))
+
+	# if update.message.chat_id == polps_id:
+	# 	mn2 = []
+	# 	for i in mn:
+	# 		try:
+	# 			int(i)
+	# 		except ValueError:
+	# 			mn2.append(i)
+	#
+	# 	browser = sf.login()
+	# 	if mn2:
+	# 		cessioni = [el.split(' (')[0] for el in mn2]
+	# 		sf.aggiorna_cessioni(browser, user, cessioni)
+	# 	sf.aggiorna_acquisti(browser, user, pl)
 
 
-def crea_riepilogo(bot, update, dt_now):
+def crea_riepilogo(dt_now):
 
 	"""
 	Mette insieme i vari messaggi di riepilogo delle offerte:
@@ -454,8 +472,6 @@ def crea_riepilogo(bot, update, dt_now):
 
 	Utilizzata dentro conferma_offerta() e riepilogo().
 
-	:param bot:
-	:param update:
 	:param dt_now: str, data e ora da trasformare in datetime
 
 	:return: messaggio in chat
@@ -466,16 +482,15 @@ def crea_riepilogo(bot, update, dt_now):
 
 	message1 = 'Aste APERTE, Tempo Rimanente:\n'
 	message2 = 'Aste CONCLUSE, NON Ufficializzate:\n'
-	message3 = ufficializzazioni()
 
 	offers_win, offers_no = aggiorna_offerte_chiuse(dt_now)
 
 	message1 = message_with_offers(offers_win, 1, dt_now, message1)
 	message2 = message_with_offers(offers_no, 2, dt_now, message2)
 
-	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
-	                        text=(message1 + '\n\n\n\n' + message2 +
-	                             '\n\n\n\n' + message3))
+	message = message1 + '\n\n\n\n' + message2
+
+	return message
 
 
 def delete_not_conf_offers_by_others(player_id, user):
@@ -695,9 +710,9 @@ def offro(bot, update, args):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != group_id:
+		if update.message.chat_id == group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza il gruppo ufficiale')
+			                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
@@ -796,9 +811,9 @@ def pago(bot, update, args):
 	"""
 
 	if BLOCK:
-		if update.message.chat_id != group_id:
+		if update.message.chat_id == group_id:
 			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza il gruppo ufficiale')
+			                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
@@ -935,9 +950,14 @@ def riepilogo(bot, update):
 
 	"""
 
+	if update.message.chat_id == group_id:
+		return bot.send_message(chat_id=update.message.chat_id,
+		                        text='Utilizza la chat privata')
+
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-	return crea_riepilogo(bot, update, dt)
+	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
+	                        text=crea_riepilogo(dt))
 
 
 def select_offer_to_confirm(user):
@@ -990,11 +1010,6 @@ def select_user(update):
 
 	except IndexError:
 		return False
-
-
-def start(bot, update):
-
-	bot.send_message(chat_id=update.message.chat_id, text="Iannelli suca")
 
 
 def too_late_to_offer(time_now, time_before):
