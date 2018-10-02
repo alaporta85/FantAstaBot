@@ -1,6 +1,6 @@
 import os
 import time
-# import logging as log
+import log_functions as log
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -8,8 +8,8 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 
 chrome_path = os.getcwd() + '/chromedriver'
-WAIT = 10
-# logger = log.get_flogger()
+WAIT = 60
+logger = log.set_logging()
 trials = 3
 
 
@@ -41,8 +41,8 @@ def aggiorna_acquisti(brow, fantasquadra, acquisti):
 	brow.find_element_by_xpath('.//button[@onclick="buyPlayers()"]').click()
 	time.sleep(3)
 
-	# logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisti[0]) +
-	#             'da parte di {} effettuato correttamente'.format(fantasquadra))
+	logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisti[0]) +
+	            'da parte di {} effettuato correttamente'.format(fantasquadra))
 
 	brow.close()
 
@@ -74,6 +74,10 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 	time.sleep(2)
 	brow.find_element_by_xpath(release).click()
 	time.sleep(3)
+
+	logger.info('AGGIORNA_CESSIONI - ' +
+	            'Cessioni di {} '.format(', '.join(cessioni)) +
+	            'da parte di {} effettuato correttamente'.format(fantasquadra))
 
 
 def close_popup(brow):
@@ -110,7 +114,7 @@ def login():
 				brow.close()
 				login()
 			else:
-				# logger.info('LOGIN - "Accedi" button not found')
+				logger.info('LOGIN - "Accedi" button not found')
 				brow.close()
 
 	brow.find_element_by_xpath(accedi).click()
@@ -146,8 +150,7 @@ def login():
 				brow.refresh()
 				login()
 			else:
-				# logger.info('LOGIN - "Fantascandalo" button ' +
-				#             'not found')
+				logger.info('LOGIN - "Fantascandalo" button not found')
 				brow.close()
 
 	return brow
@@ -161,7 +164,6 @@ def scroll_to_element(brow, true_false, element):
 	is 'false' the element will be positioned at the bottom.
 	"""
 
-	# logger.info('SELECT_TEAM - Arrow button not found')
 	brow.execute_script('return arguments[0].scrollIntoView({});'
 						   .format(true_false), element)
 
@@ -179,7 +181,7 @@ def select_team(brow, fantasquadra):
 				brow.refresh()
 				select_team(brow, fantasquadra)
 			else:
-				# logger.info('SELECT_TEAM - Arrow button not found')
+				logger.info('SELECT_TEAM - Arrow button not found')
 				brow.close()
 
 	brow.find_element_by_xpath(arrow).click()

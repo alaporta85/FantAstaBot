@@ -13,8 +13,8 @@ BLOCK = False
 group_id = -318148079
 # group_id = 67507055
 polps_id = 67507055
-jac_message = ("Impossibile riconoscere l'input. Corregere eventuali errori " +
-               "di scrittura o controllare che l'ordine di inserimento " +
+jac_message = ("Impossibile riconoscere l'input. Correggere eventuali errori" +
+               " di scrittura o controllare che l'ordine di inserimento " +
                "sia corretto.")
 
 
@@ -488,6 +488,8 @@ def conferma_autobid(bot, update):
 				columns=['autobid_status'],
 				values=['Confirmed'],
 				where='autobid_id = {}'.format(iid))
+		sf.logger.info('CONFERMA_AUTOBID - {} '.format(user) +
+		            'imposta autobid per {}'.format(pl))
 		return bot.send_message(chat_id=chat_id,
 		                        text='Autobid impostato correttamente')
 
@@ -789,7 +791,6 @@ def info(bot, update):
 	:return: messaggio in chat
 
 	"""
-
 	chat_id = update.message.chat_id
 	if update.message.chat_id == group_id:
 		return bot.send_message(chat_id=chat_id,
@@ -803,6 +804,8 @@ def info(bot, update):
 	for row in content:
 		row = row.replace('xx\n', ' ')
 		message += row
+
+	sf.logger.info('INFO - {}'.format(select_user(update)))
 
 	return bot.send_message(chat_id=chat_id, text=message)
 
@@ -1343,4 +1346,5 @@ dispatcher.add_handler(rosa_handler)
 dispatcher.add_handler(ufficiali_handler)
 
 updater.start_polling()
+# logger = log.set_logging()
 updater.idle()
