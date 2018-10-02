@@ -4,3 +4,4 @@ venv/*
 login.txt
 chromedriver
 key.txt
+db_structure/

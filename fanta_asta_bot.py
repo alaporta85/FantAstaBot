@@ -58,7 +58,8 @@ def aggiorna_offerte_chiuse(dt_now):
 			where='offer_status = "Not Official"')
 
 	# Se tra le offerte aperte ce n'è qualcuna per la quale sono già scadute
-	# le 24 ore allora il suo status viene modificato a 'Not Official'
+	# le 24 ore allora il suo status viene modificato a 'Not Official' ed
+	# elimina eventuali autobids attivi per quel calciatore
 	for of_id, tm, pl, pr, dt in offers_win:
 		dt2 = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
 		diff = dt_now - dt2
@@ -69,6 +70,9 @@ def aggiorna_offerte_chiuse(dt_now):
 					columns=['offer_status'],
 					values=['Not Official'],
 					where='offer_id = {}'.format(of_id))
+			dbf.db_delete(
+					table='autobids',
+					where='autobid_player = "{}"'.format(pl))
 
 	# Ridefinisco le due liste trasformando le stringhe in oggetti datetime
 	offers_win = [(el[0], el[1], el[2], el[3],
@@ -94,10 +98,13 @@ def autobid(bot, update, args):
 
 	"""
 
-	message = 'Formato non corretto. Ex: /autobid petagna, 30'
-
-	user = select_user(update)
 	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
+	message = 'Formato non corretto. Ex: /autobid petagna, 30'
+	user = select_user(update)
 	args = ''.join(args).split(',')
 
 	# Controllo che il formato sia corretto
@@ -434,11 +441,12 @@ def conferma_autobid(bot, update):
 
 	"""
 
-	user = select_user(update)
 	chat_id = update.message.chat_id
 	if chat_id == group_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
+
+	user = select_user(update)
 
 	# Tutti gli autobids dell'user
 	autobids = dbf.db_select(
