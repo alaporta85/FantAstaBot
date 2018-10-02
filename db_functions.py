@@ -1,6 +1,6 @@
 import sqlite3
-import datetime
 import pandas as pd
+from Cryptodome.Cipher import AES
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
@@ -26,40 +26,73 @@ def db_delete(table, where):
     db.close()
 
 
-def db_insert(table, columns, values, last_row=False):
+def decrypt_value(nonce, tag, encrypted_text):
+
+    """
+    Decripta il valore dell'autobid.
+    Utilizzata all'interno di /conferma_autobid.
+
+    :param nonce: bytes array
+    :param tag: bytes array
+    :param encrypted_text: bytes array
+
+    :return: str, il valore dell'autobid decriptato
+
+    """
+
+    key = open('key.txt', 'rb').readline()
+    cipher = AES.new(key, AES.MODE_EAX, nonce)
+
+    return cipher.decrypt_and_verify(encrypted_text, tag)
+
+
+def encrypt_value(value):
+
+    """
+    Cripta il valore dell'autobid.
+    Utilizzata all'interno di /autobid.
+
+    :param value: str, valore autobid. Ex. "35".
+
+    :return: 3 bytes arrays
+
+    """
+
+    bval = value.encode()
+    key = open('key.txt', 'rb').readline()
+    cipher = AES.new(key, AES.MODE_EAX)
+    ciphertext, tag = cipher.encrypt_and_digest(bval)
+
+    return cipher.nonce, tag, ciphertext
+
+
+def db_insert(table, columns, values):
 
     """
     Insert a new row in the table assigning the specifies values to the
     specified columns. If last_row=True, return the id of the inserted row.
 
     :param table: str, name of the table
-
     :param columns: list, each element of the list is a column of the table.
                     Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
                     in the list will be loaded.
-
     :param values: list, values of the corresponding columns
 
-    :param last_row: bool
-
-
     :return: int if last_row=True else nothing.
+
     """
 
     db, c = start_db()
 
-    placeholders = ['"{}"' if (type(v) == str or type(v) == datetime.datetime)
-                    else '{}' for v in values]
-    vals = [el[0].format(el[1]) for el in zip(placeholders, values)]
+    query = ('''INSERT INTO {} ({}) VALUES ({})'''.format(
+            table,
+            ', '.join(columns),
+            ', '.join(['?' for i in values])))
 
-    c.execute('''INSERT INTO {} ({}) VALUES ({})'''.
-              format(table, ','.join(columns), ','.join(vals)))
-    last_id = c.lastrowid
+    c.execute(query, tuple(values))
+
     db.commit()
     db.close()
-
-    if last_row:
-        return last_id
 
 
 def db_select(table, columns_in=None, columns_out=None,
@@ -144,13 +177,12 @@ def db_update(table, columns, values, where):
 
     db, c = start_db()
 
-    placeholders = ['"{}"' if (type(v) == str or type(v) == datetime.datetime)
-                    else '{}' for v in values]
-    vals = [el[0].format(el[1]) for el in zip(placeholders, values)]
-    vals = ['{}={}'.format(el[0], el[1]) for el in zip(columns, vals)]
+    query = ('''UPDATE {} SET {} WHERE {}'''.format(
+            table,
+            ', '.join([i + ' = ?' for i in columns]),
+            where))
 
-    c.execute('''UPDATE {} SET {} WHERE {}'''.format(table, ','.join(vals),
-                                                     where))
+    c.execute(query, tuple(values))
 
     db.commit()
     db.close()

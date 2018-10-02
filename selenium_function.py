@@ -214,8 +214,3 @@ def wait_visible(brow, seconds, element):
 	WebDriverWait(
 			brow, seconds).until(EC.visibility_of_element_located(
 					(By.XPATH, element)))
-
-
-# browser = login()
-# aggiorna_acquisti(browser, 'FC BOMBAGALLO', ('PETAGNA', 14))
-# aggiorna_cessioni(browser, 'FC BOMBAGALLO', ['DA COSTA', 'SECULIN', 'SEPE'])

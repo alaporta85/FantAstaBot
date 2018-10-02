@@ -11,6 +11,7 @@ f.close()
 dispatcher = updater.dispatcher
 BLOCK = False
 group_id = -318148079
+# group_id = 67507055
 polps_id = 67507055
 jac_message = ("Impossibile riconoscere l'input. Corregere eventuali errori " +
                "di scrittura o controllare che l'ordine di inserimento " +
@@ -56,6 +57,8 @@ def aggiorna_offerte_chiuse(dt_now):
 			            'offer_price', 'offer_datetime'],
 			where='offer_status = "Not Official"')
 
+	# Se tra le offerte aperte ce n'è qualcuna per la quale sono già scadute
+	# le 24 ore allora il suo status viene modificato a 'Not Official'
 	for of_id, tm, pl, pr, dt in offers_win:
 		dt2 = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
 		diff = dt_now - dt2
@@ -67,6 +70,7 @@ def aggiorna_offerte_chiuse(dt_now):
 					values=['Not Official'],
 					where='offer_id = {}'.format(of_id))
 
+	# Ridefinisco le due liste trasformando le stringhe in oggetti datetime
 	offers_win = [(el[0], el[1], el[2], el[3],
 	               datetime.strptime(el[4], '%Y-%m-%d %H:%M:%S')) for el in
 	              offers_win if el not in offers_no]
@@ -76,6 +80,165 @@ def aggiorna_offerte_chiuse(dt_now):
 	             offers_no]
 
 	return offers_win, offers_no
+
+
+def autobid(bot, update, args):
+
+	"""
+	Imposta il valore dell'autobid per una data offerta.
+
+	:param bot:
+	:param update:
+	:param args:list, input dell'user. Formato: giocatore, valore autobid
+	:return: messaggio in chat
+
+	"""
+
+	message = 'Formato non corretto. Ex: /autobid petagna, 30'
+
+	user = select_user(update)
+	chat_id = update.message.chat_id
+	args = ''.join(args).split(',')
+
+	# Controllo che il formato sia corretto
+	if not args or len(args) != 2:
+		return bot.send_message(chat_id=chat_id, text=message)
+
+	pl, ab = args
+
+	try:
+		int(pl)
+		return bot.send_message(chat_id=chat_id, text=message)
+	except ValueError:
+		pass
+
+	try:
+		int(ab)
+	except ValueError:
+		return bot.send_message(chat_id=chat_id, text=message)
+
+	aste_aperte = dbf.db_select(
+			table='offers',
+			columns_in=['offer_player'],
+			where='offer_status = "Winning"')
+	if not aste_aperte:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Nessuna asta in corso')
+
+	# Cerco nel db il calciatore corrispondente
+	jpl = ef.jaccard_result(pl.upper(), aste_aperte, 3)
+	if not jpl:
+		return bot.send_message(
+				chat_id=chat_id,
+		        text=("Giocatore non trovato. Controllare che sia " +
+		              "scritto correttamente o che ci sia già un'asta " +
+		              "in corso"))
+
+	# Squadra e ruoli
+	tm, rl = dbf.db_select(
+			table='players',
+			columns_in=['player_team', 'player_roles'],
+			where='player_name = "{}"'.format(jpl))[0]
+
+	# Creo gli oggetti necessari per criptare il valore dell'autobid e li
+	# inserisco nel db
+	nonce, tag, value = dbf.encrypt_value(args[1])
+	dbf.db_insert(
+			table='autobids',
+			columns=['autobid_user', 'autobid_player', 'autobid_nonce',
+			         'autobid_tag', 'autobid_value'],
+			values=[user, jpl, nonce, tag, value])
+
+	message = ('\t\t\t\t<b>{}</b>  <i>{}  {}</i>'.format(jpl, tm, rl) +
+	           '\n\nAutobid: {}\n\n\t\t\t\t/conferma_autobid'.format(ab))
+
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id,
+	                        text=message)
+
+
+def check_autobid(user, player_name, offer_id, datetm, last_off):
+
+	"""
+	Controlla se l'offerta supera o meno l'autobid impostato da un altro utente
+	(qualora ce ne fosse uno) e gestisce il db di conseguenza.
+	Utilizzata all'interno di conferma_offerta().
+
+	:param user: str, fantasquadra offerente
+	:param player_name: str, calciatore in questione
+	:param offer_id: int, id dell'offerta presentata
+	:param datetm: str, data e ora da formattare
+	:param last_off: int, id dell'ultima offerta vincente per il calciatore
+
+	:return: str o tuple a seconda della situazione
+
+	"""
+
+	# Seleziono tutti gli autobids già impostati da altri users per lo stesso
+	# calcatore. Qualora non ce ne fossero, assegno valore nullo ad alcune
+	# variabili in modo da gestire il codice successivo
+	try:
+		iid, ab_user, nonce, tag, encr_value = dbf.db_select(
+				table='autobids',
+				columns_in=['autobid_id', 'autobid_user', 'autobid_nonce',
+				            'autobid_tag', 'autobid_value'],
+				where='autobid_player = "{}"'.format(player_name))[0]
+		last_ab = int(dbf.decrypt_value(nonce, tag, encr_value).decode())
+	except IndexError:
+		iid = 0
+		last_ab = 0
+		ab_user = ''
+
+	offer = int(dbf.db_select(
+			table='offers',
+			columns_in=['offer_price'],
+			where='offer_id = {}'.format(offer_id))[0])
+
+	# Se l'offerta è inferiore all'autobid di un altro user: cancello l'offerta
+	# dal db, aggiorno il valore dell'offerta dell'altro utente e, qualora
+	# questo nuovo valore raggiunga il limite dell'autobid dell'altro user,
+	# elimino tale autobid dal db
+	if offer < last_ab:
+		dbf.db_delete(table='offers', where='offer_id = {}'.format(offer_id))
+		dbf.db_update(
+				table='offers',
+				columns=['offer_price', 'offer_datetime'],
+				values=[offer + 1, datetm],
+				where='offer_id = {}'.format(last_off))
+		if offer + 1 == last_ab:
+			dbf.db_delete(table='autobids',
+			              where='autobid_id = {}'.format(iid))
+
+		message1 = ("Offerta troppo bassa. Non hai superato" +
+		            " l'autobid di {}.".format(ab_user))
+
+		message2 = ('<i>{}</i> ha tentato un rilancio di '.format(user) +
+		            '{} per <b>{}</b>.'.format(offer, player_name) +
+		            '\n\n' + '_' * 30 + '\n\n\n' + crea_riepilogo(datetm))
+
+		return message1, message2
+
+	# Se invece l'offerta supera l'ultimo autobid allora cancello l'autobid dal
+	# db ed aggiorno tutti gli altri parametri
+	else:
+		dbf.db_delete(table='autobids', where='autobid_id = {}'.format(iid))
+
+		delete_not_conf_offers_by_others(player_name, user)
+
+		dbf.db_update(
+				table='offers',
+				columns=['offer_datetime', 'offer_status'],
+				values=[datetm, 'Winning'],
+				where='offer_id = {}'.format(offer_id))
+
+		dbf.db_update(
+				table='offers',
+				columns=['offer_status'],
+				values=['Lost'],
+				where='offer_id = {}'.format(last_off))
+
+		message = crea_riepilogo(datetm)
+
+		return message
 
 
 def check_offer_format(args):
@@ -144,16 +307,8 @@ def check_offer_value(offer_id, player, dt):
 
 	"""
 
-	offer = dbf.db_select(
-			table='offers',
-			columns_in=['offer_price'],
-			where='offer_id = {}'.format(offer_id))[0]
-
-	price = dbf.db_select(
-			table='players',
-			columns_in=['player_price'],
-			where='player_name = "{}"'.format(player))[0]
-
+	# Prendo dal db i dettagli dell'ultima offerta valida per questo
+	# calciatore, qualora ci sia
 	try:
 		cond1 = 'offer_player = "{}" AND offer_status = "Winning"'.format(
 				player)
@@ -171,6 +326,8 @@ def check_offer_value(offer_id, player, dt):
 		last_id = 0
 		last_dt = '2030-01-01 00:00:00'
 
+	# Controllo che non siano passate le 24 ore. Se è troppo tardi, aggiorno
+	# il db
 	if too_late_to_offer(dt, last_dt):
 		dbf.db_delete(table='offers', where='offer_id = {}'.format(offer_id))
 
@@ -188,6 +345,18 @@ def check_offer_value(offer_id, player, dt):
 
 		return ('Troppo tardi, 24 ore scadute. ' +
 		        '{} acquistato da {}'.format(player, last_user))
+
+	# Se non è troppo tardi confronto l'offerta con l'ultimo rilancio e con la
+	# quotazione, a seconda dei casi
+	offer = dbf.db_select(
+			table='offers',
+			columns_in=['offer_price'],
+			where='offer_id = {}'.format(offer_id))[0]
+
+	price = dbf.db_select(
+			table='players',
+			columns_in=['player_price'],
+			where='player_name = "{}"'.format(player))[0]
 
 	if offer <= last_offer:
 		dbf.db_delete(table='offers', where='offer_id = {}'.format(offer_id))
@@ -236,6 +405,8 @@ def check_pago_format(args, user):
 		except ValueError:
 			pass
 
+		# Prendo dal db tutte le offerte 'Not Official' dell'user. Nel caso non
+		# ce ne siano mando un messaggio in chat
 		offers_user = dbf.db_select(
 				table='offers',
 				columns_in=['offer_player'],
@@ -248,6 +419,69 @@ def check_pago_format(args, user):
 			        '\t\t\t- Offerta inesistente')
 
 		return args, offers_user
+
+
+def conferma_autobid(bot, update):
+
+	"""
+	Elimina tutti i vecchi autobids non confermati dall'user e confronta il
+	valore impostato con quello dell'ultima offerta valida. Se tutto ok,
+	aggiorna il db.
+
+	:param bot:
+	:param update:
+	:return: messaggio in chat
+
+	"""
+
+	user = select_user(update)
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
+	# Tutti gli autobids dell'user
+	autobids = dbf.db_select(
+			table='autobids',
+			columns_out=['autobid_user', 'autobid_status'],
+			where=('autobid_user = "{}" '.format(user) +
+			       'AND autobid_status IS NULL'))
+
+	if not autobids:
+		return bot.send_message(
+				chat_id=chat_id, text='Nessun autobid da confermare')
+
+	# Elimino tutti tranne l'ultimo in ordine di tempo
+	old = autobids[:-1]
+	for ab in old:
+		dbf.db_delete(
+				table='autobids',
+				where='autobid_id = {}'.format(ab[0]))
+
+	# Decripto il valore impostato e lo confronto con l'ultima offerta valida
+	iid, pl, nonce, tag, encr_value = autobids[-1]
+	ab_value = int(dbf.decrypt_value(nonce, tag, encr_value).decode())
+
+	last_offer = dbf.db_select(
+			table='offers',
+			columns_in=['offer_price'],
+			where=('offer_player = "{}" AND '.format(pl) +
+			       'offer_status = "Winning"'))[0]
+
+	if ab_value <= last_offer:
+		dbf.db_delete(table='autobids', where='autobid_id = {}'.format(iid))
+		return bot.send_message(chat_id=chat_id,
+		                        text=("Valore autobid troppo basso. " +
+		                              "Impostare un valore superiore" +
+		                              " all'attuale offerta vincente."))
+	else:
+		dbf.db_update(
+				table='autobids',
+				columns=['autobid_status'],
+				values=['Confirmed'],
+				where='autobid_id = {}'.format(iid))
+		return bot.send_message(chat_id=chat_id,
+		                        text='Autobid impostato correttamente')
 
 
 def conferma_offerta(bot, update):
@@ -263,57 +497,52 @@ def conferma_offerta(bot, update):
 
 	"""
 
-	if BLOCK:
-		if update.message.chat_id == group_id:
-			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza la chat privata')
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+	# Controllo che ci siano offerte da confermare
 	try:
 		of_id, pl = select_offer_to_confirm(user)
-	except ValueError:
-		return bot.send_message(chat_id=update.message.chat_id,
-								text=select_offer_to_confirm(user))
+	except TypeError:
+		return bot.send_message(chat_id=chat_id,
+								text='Nulla da confermare per {}'.format(user))
 
+	# Controllo che il calciatore sia svincolato
 	status = dbf.db_select(
 					table='players',
 					columns_in=['player_status'],
 					where='player_name = "{}"'.format(pl))[0]
 	if status != 'FREE':
 		dbf.db_delete(table='offers', where='offer_id = {}'.format(of_id))
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 								text='Giocatore non svincolato ({}).'.
 								format(status))
 
+	# Controllo che l'offerta superi l'ultimo rilancio
 	last_valid_offer = check_offer_value(of_id, pl, dt)
 	if type(last_valid_offer) == str:
-		return bot.send_message(chat_id=update.message.chat_id,
-								text=last_valid_offer)
+		return bot.send_message(chat_id=chat_id, text=last_valid_offer)
 
-	pl_id = dbf.db_select(
-					table='players',
-					columns_in=['player_id'],
-					where='player_name = "{}"'.format(pl))[0]
+	# Controllo gli autobids
+	result = check_autobid(user, pl, of_id, dt, last_valid_offer)
+	if len(result) == 2:
 
-	delete_not_conf_offers_by_others(pl_id, user)
+		pvt_mess, group_mess = result
 
-	dbf.db_update(
-			table='offers',
-			columns=['offer_datetime', 'offer_status'],
-			values=[dt, 'Winning'],
-			where='offer_id = {}'.format(of_id))
+		bot.send_message(chat_id=chat_id, text=pvt_mess)
 
-	dbf.db_update(
-			table='offers',
-			columns=['offer_status'],
-			values=['Lost'],
-			where='offer_id = {}'.format(last_valid_offer))
+		return bot.send_message(parse_mode='HTML', chat_id=group_id,
+		                        text=group_mess)
 
-	message = crea_riepilogo(dt)
+	else:
 
-	return bot.send_message(parse_mode='HTML', chat_id=group_id, text=message)
+		return bot.send_message(parse_mode='HTML', chat_id=group_id,
+		                        text=result)
 
 
 def conferma_pagamento(bot, update):
@@ -333,13 +562,16 @@ def conferma_pagamento(bot, update):
 
 	"""
 
-	if BLOCK:
-		if update.message.chat_id == group_id:
-			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza la chat privata')
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
+	# Controllo ci siano pagamenti da confermare e qualora ci fossero seleziono
+	# l'ultimo in ordine di tempo e cancello tutti gli altri 'Not Confirmed'
+	# dal db
 	try:
 		pay_id, pl, pr, mn = dbf.db_select(
 				table='pays',
@@ -350,16 +582,12 @@ def conferma_pagamento(bot, update):
 				table='pays',
 				where='pay_id != {} AND pay_player = "{}"'.format(pay_id, pl))
 	except IndexError:
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text='Nulla da confermare per {}'.format(user))
 
-	budget = dbf.db_select(
-			table='budgets',
-			columns_in=['budget_value'],
-			where='budget_team = "{}"'.format(user))[0]
-
+	# Analizzo il metodo di pagamento proposto e controllo che sia sufficiente
+	# a coprire la spesa
 	mn = mn.split(', ')
-
 	temp_bud = 0
 	for i in mn:
 		try:
@@ -371,10 +599,17 @@ def conferma_pagamento(bot, update):
 		dbf.db_delete(
 				table='pays',
 				where='pay_user = "{}" AND pay_player = "{}"'.format(user, pl))
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text=('Offerta insufficiente.\n' +
 		                              'Milioni mancanti: {}'.format(
 				                              pr - temp_bud)))
+
+	# Sommo al budget della fantasquadra il prezzo dei giocatori utilizzati
+	# nel pagamento, se presenti, e che saranno quindi ceduti
+	budget = dbf.db_select(
+			table='budgets',
+			columns_in=['budget_value'],
+			where='budget_team = "{}"'.format(user))[0]
 
 	for i in mn:
 		try:
@@ -385,17 +620,19 @@ def conferma_pagamento(bot, update):
 					columns_in=['player_price'],
 					where='player_name = "{}"'.format(i.split(' (')[0]))[0]
 
+	# Qualora l'offerta sia valida, aggiorno varie voci nel db sia del
+	# calciatore acquistato che di quelli ceduti, se presenti
 	if budget < pr:
 		dbf.db_delete(
 				table='pays',
 				where='pay_user = "{}" AND pay_player = "{}"'.format(user, pl))
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text='Budget insufficiente')
 	else:
 		dbf.db_update(
 				table='budgets',
 				columns=['budget_value'],
-				values=[budget - pr],
+				values=[int(budget - pr)],
 				where='budget_team = "{}"'.format(user))
 
 		dbf.db_update(
@@ -427,18 +664,9 @@ def conferma_pagamento(bot, update):
 						values=['FREE'],
 						where='player_name = "{}"'.format(i.split(' (')[0]))
 
-	# bot.send_message(chat_id=update.message.chat_id,
-	#                  text=('Rosa {} aggiornata.\n'.format(user) +
-	#                        'Budget aggiornato: {}'.format(budget - pr)))
-
-	price, payment = dbf.db_select(
-			table='pays',
-			columns_in=['pay_price', 'pay_money'],
-			where='pay_player = "{}"'.format(pl))[0]
-
 	message = ('<i>{}</i> ha ufficializzato '.format(user) +
-	           '<b>{}</b> a {}.'.format(pl, price) +
-	           '\n\nPagamento: {}'.format(payment))
+	           '<b>{}</b> a {}.'.format(pl, pr) +
+	           '\n\nPagamento: {}'.format(', '.join(mn)))
 
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -446,19 +674,18 @@ def conferma_pagamento(bot, update):
 	                 text=(message + '\n\n' + '_'*30 + '\n\n\n' +
 	                       crea_riepilogo(dt)))
 
-	# if update.message.chat_id == polps_id:
-	# 	mn2 = []
-	# 	for i in mn:
-	# 		try:
-	# 			int(i)
-	# 		except ValueError:
-	# 			mn2.append(i)
+	# mn2 = []
+	# for i in mn:
+	# 	try:
+	# 		int(i)
+	# 	except ValueError:
+	# 		mn2.append(i)
 	#
-	# 	browser = sf.login()
-	# 	if mn2:
-	# 		cessioni = [el.split(' (')[0] for el in mn2]
-	# 		sf.aggiorna_cessioni(browser, user, cessioni)
-	# 	sf.aggiorna_acquisti(browser, user, pl)
+	# browser = sf.login()
+	# if mn2:
+	# 	cessioni = [el.split(' (')[0] for el in mn2]
+	# 	sf.aggiorna_cessioni(browser, user, cessioni)
+	# sf.aggiorna_acquisti(browser, user, pl)
 
 
 def crea_riepilogo(dt_now):
@@ -493,14 +720,14 @@ def crea_riepilogo(dt_now):
 	return message
 
 
-def delete_not_conf_offers_by_others(player_id, user):
+def delete_not_conf_offers_by_others(player_name, user):
 
 	"""
 	Elimina dal db le offerte di altri users per lo stesso giocatore che non
 	sono state confermate.
 	Utilizzata all'interno di conferma_offerta().
 
-	:param player_id: int, id del giocatore
+	:param player_name: str, nome del giocatore
 	:param user: str, fantasquadra
 
 	:return: Nothing
@@ -510,7 +737,7 @@ def delete_not_conf_offers_by_others(player_id, user):
 	old_ids = dbf.db_select(
 			table='offers',
 			columns_in=['offer_id'],
-			where='offer_player_id = {} '.format(player_id) +
+			where='offer_player = "{}"'.format(player_name) +
 				  'AND offer_status IS NULL AND ' +
 				  'offer_user != "{}"'.format(user))
 
@@ -522,7 +749,7 @@ def delete_not_conf_offers_by_user(user):
 
 	"""
 	Elimina dal db le offerte dell'user che non sono state confermate.
-	Utilizzata all'interno di conferma_offerta().
+	Utilizzata all'interno di check_autobid().
 
 	:param user: str, fantasquadra
 
@@ -555,8 +782,9 @@ def info(bot, update):
 
 	"""
 
+	chat_id = update.message.chat_id
 	if update.message.chat_id == group_id:
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
 	g = open('info.txt', 'r')
@@ -568,7 +796,7 @@ def info(bot, update):
 		row = row.replace('xx\n', ' ')
 		message += row
 
-	return bot.send_message(chat_id=update.message.chat_id, text=message)
+	return bot.send_message(chat_id=chat_id, text=message)
 
 
 def message_with_offers(list_of_offers, shift, dt_now, msg):
@@ -620,71 +848,75 @@ def message_with_payment(bot, update, user, user_input, offers_user):
 
 	"""
 
-	rosa = dbf.db_select(
-			table='players',
-			columns_in=['player_name'],
-			where='player_status = "{}"'.format(user))
+	chat_id = update.message.chat_id
 
+	# Nel pagamento proposto dall'user separo i calciatori dai soldi
 	pls = []
 	money = 0
-	message = ''
-
 	for i in user_input:
 		try:
 			money = int(i)
 		except ValueError:
 			pls.append(i)
 
-	new_pls = []
-	for i, pl in enumerate(pls):
-		if not i:
-			pl2 = ef.jaccard_result(pl.upper(), offers_user, 3)
-			if not pl2:
-				return bot.send_message(chat_id=update.message.chat_id,
-				                        text=jac_message)
+	# Tra i calciatori separo quello da acquistare da quelli da svincolare
+	acquisto, pagamento = pls[0], pls[1:]
 
-			off_id, price = dbf.db_select(
-					table='offers',
-					columns_in=['offer_id', 'offer_price'],
-					where='offer_player = "{}"'.format(pl2))[-1]
+	# Gestisco prima tutta la parte relativa all'acquisto
+	pl = ef.jaccard_result(acquisto.upper(), offers_user, 3)
+	if not pl:
+		return bot.send_message(chat_id=chat_id,
+		                        text=jac_message)
 
-			dbf.db_insert(
-					table='pays',
-					columns=['pay_user', 'pay_offer',
-					         'pay_player', 'pay_price'],
-					values=[user, off_id, pl2, price])
+	off_id, price = dbf.db_select(
+			table='offers',
+			columns_in=['offer_id', 'offer_price'],
+			where='offer_player = "{}"'.format(pl))[-1]
 
-			team, roles = dbf.db_select(
-					table='players',
-					columns_in=['player_team', 'player_roles'],
-					where='player_name = "{}"'.format(pl2))[0]
+	dbf.db_insert(
+			table='pays',
+			columns=['pay_user', 'pay_offer',
+			         'pay_player', 'pay_price'],
+			values=[user, off_id, pl, price])
 
-			message = ('<i>{}</i> ufficializza:\n\n\t\t\t\t\t\t'.format(user) +
-			           '<b>{}</b> <i>({})   {}</i>\n\n'.format(pl2, team,
-			                                                   roles) +
-			           'Prezzo: <b>{}</b>.\n\nPagamento:\n'.format(price))
+	team, roles = dbf.db_select(
+			table='players',
+			columns_in=['player_team', 'player_roles'],
+			where='player_name = "{}"'.format(pl))[0]
 
-		else:
-			pl2 = ef.jaccard_result(pl.upper(), rosa, 3)
-			if not pl2:
-				return bot.send_message(chat_id=update.message.chat_id,
-				                        text=jac_message)
+	message = ('<i>{}</i> ufficializza:\n\n\t\t\t\t\t\t'.format(user) +
+	           '<b>{}</b> <i>({})   {}</i>\n\n'.format(pl, team,
+	                                                   roles) +
+	           'Prezzo: <b>{}</b>.\n\nPagamento:\n'.format(price))
 
-			tm, rls, pr = dbf.db_select(
-					table='players',
-					columns_in=['player_team', 'player_roles', 'player_price'],
-					where='player_name = "{}"'.format(pl2))[0]
+	# E poi quella relativa alle varie cessioni, se presenti
+	rosa = dbf.db_select(
+			table='players',
+			columns_in=['player_name'],
+			where='player_status = "{}"'.format(user))
 
-			new_pls.append((pl2, tm, rls, pr))
+	for i, pl in pagamento:
+		pl2 = ef.jaccard_result(pl.upper(), rosa, 3)
+		if not pl2:
+			return bot.send_message(chat_id=chat_id,
+			                        text=jac_message)
 
+		tm, rls, pr = dbf.db_select(
+				table='players',
+				columns_in=['player_team', 'player_roles', 'player_price'],
+				where='player_name = "{}"'.format(pl2))[0]
+
+		pagamento[i] = (pl2, tm, rls, pr)
+
+	# Formatto alcuni parametri per poi inviarli come messaggio in chat
 	money_db = ', '.join(['{} ({}: {})'.format(el[0], el[1], el[3]) for el in
-	                      new_pls])
-	if money and len(new_pls):
+	                      pagamento])
+	if money and len(pagamento):
 		money_db += ', {}'.format(money)
 	elif money:
 		money_db += '{}'.format(money)
 
-	for pl, tm, rl, pr in new_pls:
+	for pl, tm, rl, pr in pagamento:
 		message += '\n\t\t- <b>{}</b> <i>({})   {}</i>   {}'.format(pl, tm,
 		                                                            rl, pr)
 	if money:
@@ -709,44 +941,44 @@ def offro(bot, update, args):
 
 	"""
 
-	if BLOCK:
-		if update.message.chat_id == group_id:
-			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza la chat privata')
+	chat_id = update.message.chat_id
+	if update.message.chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
+	# Controllo che il formato sia giusto
 	try:
 		offer, pl, team = check_offer_format(args)
 	except ValueError:
 		message = check_offer_format(args)
-		return bot.send_message(chat_id=update.message.chat_id, text=message)
+		return bot.send_message(chat_id=chat_id, text=message)
 
 	delete_not_conf_offers_by_user(user)
 
-	all_teams = list(set(dbf.db_select(
-					table='players',
-					columns_in=['player_team'])))
-	j_tm = ef.jaccard_result(team[:3].upper(), all_teams, 3)
+	# Cerco nel db la squadra corrispondente all'input dell'user
+	j_tm = ef.jaccard_result(team[:3].upper(),
+	                         dbf.db_select(table='players',
+	                                       columns_in=['player_team']), 3)
 	if not j_tm:
-		return bot.send_message(chat_id=update.message.chat_id,
-		                        text=jac_message)
-	j_pl = dbf.db_select(
+		return bot.send_message(chat_id=chat_id, text=jac_message)
+
+	# Seleziono i calciatori della squadra scelta
+	pls = dbf.db_select(
 					table='players',
 					columns_in=['player_name'],
 					where='player_team = "{}"'.format(j_tm))
-	if not len(j_pl):
-		return bot.send_message(chat_id=update.message.chat_id,
-		                        text='Squadra inesistente')
 
-	pl = ef.jaccard_result(pl.upper(), j_pl, 3)
+	# Cerco il calciatore corrispondente all'input dell'user ed aggiorno il db
+	pl = ef.jaccard_result(pl.upper(), pls, 3)
 	if not pl:
-		return bot.send_message(chat_id=update.message.chat_id,
-		                        text=jac_message)
-	pl_id = dbf.db_select(
+		return bot.send_message(chat_id=chat_id, text=jac_message)
+
+	pl_id = int(dbf.db_select(
 			table='players',
 			columns_in=['player_id'],
-			where='player_name = "{}"'.format(pl))[0]
+			where='player_name = "{}"'.format(pl))[0])
 
 	team, roles, price = dbf.db_select(
 			table='players',
@@ -759,8 +991,7 @@ def offro(bot, update, args):
 			         'offer_price'],
 			values=[user, pl, pl_id, offer])
 
-	return bot.send_message(parse_mode='HTML',
-	                        chat_id=update.message.chat_id,
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id,
 							text='<i>{}</i> offre <b>{}</b> per:\n\n\t\t'.
 							format(user, offer) +
 							     '<b>{}   ({})   {}</b>'.
@@ -810,10 +1041,10 @@ def pago(bot, update, args):
 
 	"""
 
-	if BLOCK:
-		if update.message.chat_id == group_id:
-			return bot.send_message(chat_id=update.message.chat_id,
-			                        text='Utilizza la chat privata')
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
 
 	user = select_user(update)
 
@@ -822,10 +1053,11 @@ def pago(bot, update, args):
 
 	_, _ = aggiorna_offerte_chiuse(dt)
 
+	# Controllo che il formato sia corretto
 	try:
 		args, offers_user = check_pago_format(args, user)
 	except ValueError:
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text=check_pago_format(args, user))
 
 	money_db, message = message_with_payment(bot, update, user, args,
@@ -837,8 +1069,7 @@ def pago(bot, update, args):
 			values=[money_db, 'Not Confirmed'],
 			where='pay_user = "{}" AND pay_status IS NULL'.format(user))
 
-	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
-	                        text=message)
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
 def prezzo(bot, update, args):
@@ -854,23 +1085,23 @@ def prezzo(bot, update, args):
 
 	"""
 
-	if update.message.chat_id == group_id:
-		return bot.send_message(chat_id=update.message.chat_id,
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
 	if len(args) != 2:
-		return bot.send_message(chat_id=update.message.chat_id,
-		                        text=('Inserire giocatore e squadra.\n' +
+		return bot.send_message(chat_id=chat_id,
+		                        text=('Formato non corretto.\n' +
 		                        'Ex: /prezzo higuain, milan'))
 
 	pl, tm = ''.join(args).split(',')
 
-	tm = ef.jaccard_result(tm.upper(),
-	                       dbf.db_select(
-			                       table='players',
-			                       columns_in=['player_team']), 3)
+	tm = ef.jaccard_result(
+			tm.upper(), dbf.db_select(table='players',
+			                          columns_in=['player_team']), 3)
 	if not tm:
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text=jac_message)
 
 	pl = ef.jaccard_result(pl.upper(),
@@ -879,7 +1110,7 @@ def prezzo(bot, update, args):
 			                       columns_in=['player_name'],
 	                               where='player_team = "{}"'.format(tm)), 3)
 	if not pl:
-		return bot.send_message(chat_id=update.message.chat_id,
+		return bot.send_message(chat_id=chat_id,
 		                        text=jac_message)
 
 	rl, pr, st = dbf.db_select(
@@ -894,9 +1125,7 @@ def prezzo(bot, update, args):
 	           'Squadra: <i>{}</i>\n'.format(st) +
 	           'Prezzo: <b>{}</b>'.format(pr))
 
-	return bot.send_message(parse_mode='HTML',
-	                        chat_id=update.message.chat_id,
-	                        text=message)
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
 def print_rosa(bot, update):
@@ -912,8 +1141,9 @@ def print_rosa(bot, update):
 
 	"""
 
-	if update.message.chat_id == group_id:
-		return bot.send_message(chat_id=update.message.chat_id,
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
 	user = select_user(update)
@@ -933,8 +1163,7 @@ def print_rosa(bot, update):
 	message += ('\n\nNumero di giocatori: <b>{}</b>\n'.format(len(rosa)) +
 	            'Milioni disponibili: <b>{}</b>'.format(budget))
 
-	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
-	                        text=message)
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
 def riepilogo(bot, update):
@@ -950,13 +1179,14 @@ def riepilogo(bot, update):
 
 	"""
 
-	if update.message.chat_id == group_id:
-		return bot.send_message(chat_id=update.message.chat_id,
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-	return bot.send_message(parse_mode='HTML', chat_id=update.message.chat_id,
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id,
 	                        text=crea_riepilogo(dt))
 
 
@@ -985,7 +1215,7 @@ def select_offer_to_confirm(user):
 		return of_id, pl
 
 	except IndexError:
-		return 'Nulla da confermare per {}'.format(user)
+		return False
 
 
 def select_user(update):
@@ -1036,25 +1266,29 @@ def too_late_to_offer(time_now, time_before):
 		return False
 
 
-def ufficializzazioni():
+def ufficiali(bot, update):
 
 	"""
 	Crea il messaggio con le offerte già ufficializzate.
-	Utilizzata all'interno di crea_riepilogo().
 
-	:return message: str, messaggio
+	:return message: messaggio in chat
 
 	"""
 
+	chat_id = update.message.chat_id
+	if chat_id == group_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
 	message = 'Ufficializzazioni:\n'
 
-	ufficiali = dbf.db_select(
+	uffic = dbf.db_select(
 			table='offers',
 			columns_in=['offer_id', 'offer_user',
 			            'offer_player', 'offer_price'],
 			where='offer_status = "Official"')
 
-	for off_id, user, pl, pr in ufficiali:
+	for off_id, user, pl, pr in uffic:
 
 		tm = dbf.db_select(
 				table='players',
@@ -1070,10 +1304,12 @@ def ufficializzazioni():
 		            'acquista <b>{}</b> ({}) a {}. '.format(pl, tm, pr) +
 		            'Pagamento: <i>{}</i>.'.format(pagamento))
 
-	return message
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
 # aaa_handler = CommandHandler('aaa', aaa)
+autobid_handler = CommandHandler('autobid', autobid, pass_args=True)
+conferma_autobid_handler = CommandHandler('conferma_autobid', conferma_autobid)
 conferma_offerta_handler = CommandHandler('conferma_offerta', conferma_offerta)
 conferma_pagamento_handler = CommandHandler('conferma_pagamento',
                                             conferma_pagamento)
@@ -1083,8 +1319,11 @@ pago_handler = CommandHandler('pago', pago, pass_args=True)
 prezzo_handler = CommandHandler('prezzo', prezzo, pass_args=True)
 riepilogo_handler = CommandHandler('riepilogo', riepilogo)
 rosa_handler = CommandHandler('rosa', print_rosa)
+ufficiali_handler = CommandHandler('ufficiali', ufficiali)
 
 # dispatcher.add_handler(aaa_handler)
+dispatcher.add_handler(autobid_handler)
+dispatcher.add_handler(conferma_autobid_handler)
 dispatcher.add_handler(conferma_offerta_handler)
 dispatcher.add_handler(conferma_pagamento_handler)
 dispatcher.add_handler(info_handler)
@@ -1093,6 +1332,7 @@ dispatcher.add_handler(pago_handler)
 dispatcher.add_handler(prezzo_handler)
 dispatcher.add_handler(riepilogo_handler)
 dispatcher.add_handler(rosa_handler)
+dispatcher.add_handler(ufficiali_handler)
 
 updater.start_polling()
 updater.idle()
