@@ -165,6 +165,31 @@ def autobid(bot, update, args):
 	                        text=message)
 
 
+def autorilancio(user, player_name):
+
+	"""
+	Controlla che l'user non stia effettuando un autorilancio.
+
+	:param user: str, fantasquadra
+	:param player_name: str, nome calciatore
+
+	:return: bool, True se autorilancio altrimenti False
+
+	"""
+
+	offer = dbf.db_select(
+			table='offers',
+			columns_in=['offer_id'],
+			where=('offer_user = "{}" AND '.format(user) +
+			       'offer_player = "{}" AND '.format(player_name) +
+			       'offer_status = "Winning"'))
+
+	if offer:
+		return True
+	else:
+		return False
+
+
 def check_autobid(user, player_name, offer_id, datetm, last_off):
 
 	"""
@@ -468,7 +493,7 @@ def conferma_autobid(bot, update):
 				table='autobids',
 				where='autobid_id = {}'.format(ab[0]))
 
-	# Decripto il valore impostato e lo confronto con l'ultima offerta valida
+	# Decripto il valore impostato
 	iid, pl, nonce, tag, encr_value = autobids[-1]
 	ab_value = int(dbf.decrypt_value(nonce, tag, encr_value).decode())
 
@@ -539,6 +564,11 @@ def conferma_offerta(bot, update):
 	except TypeError:
 		return bot.send_message(chat_id=chat_id,
 								text='Nulla da confermare per {}'.format(user))
+
+	# Controllo che non si tratti di autorilancio
+	if autorilancio(user, pl):
+		return bot.send_message(chat_id=chat_id,
+		                        text="L'ultima offerta è già tua.")
 
 	# Controllo che il calciatore sia svincolato
 	status = dbf.db_select(
@@ -924,7 +954,7 @@ def message_with_payment(bot, update, user, user_input, offers_user):
 			columns_in=['player_name'],
 			where='player_status = "{}"'.format(user))
 
-	for i, pl in pagamento:
+	for i, pl in enumerate(pagamento):
 		pl2 = ef.jaccard_result(pl.upper(), rosa, 3)
 		if not pl2:
 			return bot.send_message(chat_id=chat_id,
