@@ -124,22 +124,24 @@ def autobid(bot, update, args):
 	except ValueError:
 		return bot.send_message(chat_id=chat_id, text=message)
 
-	aste_aperte = dbf.db_select(
-			table='offers',
-			columns_in=['offer_player'],
-			where='offer_status = "Winning"')
-	if not aste_aperte:
-		return bot.send_message(chat_id=chat_id,
-		                        text='Nessuna asta in corso')
+	# aste_aperte = dbf.db_select(
+	# 		table='offers',
+	# 		columns_in=['offer_player'],
+	# 		where='offer_status = "Winning"')
+	# if not aste_aperte:
+	# 	return bot.send_message(chat_id=chat_id,
+	# 	                        text='Nessuna asta in corso')
 
 	# Cerco nel db il calciatore corrispondente
-	jpl = ef.jaccard_result(pl.upper(), aste_aperte, 3)
+	jpl = ef.jaccard_result(pl.upper(), dbf.db_select(
+			table='players',
+	        columns_in=['player_name'],
+			where='player_status = "FREE"'), 3)
 	if not jpl:
 		return bot.send_message(
 				chat_id=chat_id,
 		        text=("Giocatore non trovato. Controllare che sia " +
-		              "scritto correttamente o che ci sia già un'asta " +
-		              "in corso"))
+		              "scritto correttamente."))
 
 	# Squadra e ruoli
 	tm, rl = dbf.db_select(
@@ -470,11 +472,27 @@ def conferma_autobid(bot, update):
 	iid, pl, nonce, tag, encr_value = autobids[-1]
 	ab_value = int(dbf.decrypt_value(nonce, tag, encr_value).decode())
 
-	last_offer = dbf.db_select(
-			table='offers',
-			columns_in=['offer_price'],
-			where=('offer_player = "{}" AND '.format(pl) +
-			       'offer_status = "Winning"'))[0]
+	# Controllo se c'è già un'asta in corso per il calciatore
+	try:
+		last_offer = dbf.db_select(
+				table='offers',
+				columns_in=['offer_price'],
+				where=('offer_player = "{}" AND '.format(pl) +
+				       'offer_status = "Winning"'))[0]
+	except IndexError:
+		last_offer = 0
+
+	# Se non c'è, gestisco la situazione in modo da presentare automaticamente
+	# un'offerta a prezzo base oppure segnalare all'utente l'assenza di un'asta
+	# attiva
+	if not last_offer:
+		message = prezzo_base_automatico(user, iid, pl, ab_value, active=True)
+
+		if type(message) == tuple:
+			return bot.send_message(chat_id=chat_id, text=message[1])
+		else:
+			return bot.send_message(parse_mode='HTML', chat_id=group_id,
+			                        text=message)
 
 	if ab_value <= last_offer:
 		dbf.db_delete(table='autobids', where='autobid_id = {}'.format(iid))
@@ -805,7 +823,7 @@ def info(bot, update):
 		row = row.replace('xx\n', ' ')
 		message += row
 
-	sf.logger.info('INFO - {}'.format(select_user(update)))
+	sf.logger.info('/INFO - {}'.format(select_user(update)))
 
 	return bot.send_message(chat_id=chat_id, text=message)
 
@@ -1137,6 +1155,66 @@ def prezzo(bot, update, args):
 	           'Prezzo: <b>{}</b>'.format(pr))
 
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
+
+
+def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
+
+	"""
+	Presenta on'offerta a prezzo base o comunica la mancanza di un'asta attiva.
+	Utilizzata all'interno di conferma_autobid(). L'oggetto del return può
+	essere un tuple o una str in modo da distinguere il messaggio da inviare
+	in chat privata e quello da inviare nel gruppo ufficiale.
+
+	:param user: str, fantasquadra
+	:param ab_id: int, id dell'autobid
+	:param player_name: str, nome del calciatore
+	:param autobid_value: int, valore autobid
+	:param active: bool
+
+	:return: tuple o str a seconda dei casi
+
+	"""
+
+	if active:
+
+		dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+		pl_id, pr_base = dbf.db_select(
+				table='players',
+				columns_in=['player_id', 'player_price'],
+				where='player_name = "{}"'.format(player_name))[0]
+
+		if autobid_value < pr_base:
+			dbf.db_delete(
+					table='autobids',
+					where='autobid_id = {}'.format(ab_id))
+
+			return (False, 'Valore autobid troppo basso. ' +
+			        'Prezzo base: {}'.format(pr_base))
+
+		dbf.db_insert(
+				table='offers',
+				columns=['offer_user', 'offer_player', 'offer_player_id',
+				         'offer_price', 'offer_datetime', 'offer_status'],
+				values=[user, player_name, pl_id, pr_base, dt, 'Winning'])
+
+		dbf.db_update(
+				table='autobids',
+				columns=['autobid_status'],
+				values=['Confirmed'],
+				where='autobid_id = {}'.format(ab_id))
+		sf.logger.info('PREZZO_BASE_AUTOMATICO - {} '.format(user) +
+		               'offre prezzo base ed imposta autobid ' +
+		               'per {}'.format(player_name))
+
+		return crea_riepilogo(dt)
+
+	else:
+		dbf.db_delete(
+				table='autobids',
+				where='autobid_id = {}'.format(ab_id))
+
+		return False, 'Nessuna asta trovata per il calciatore scelto.'
 
 
 def print_rosa(bot, update):
