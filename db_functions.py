@@ -1,5 +1,6 @@
 import sqlite3
 import pandas as pd
+import numpy as np
 from Cryptodome.Cipher import AES
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -149,10 +150,20 @@ def db_select(table, columns_in=None, columns_out=None,
         if len(cols) == 1:
             res = [df.loc[i, cols[0]] for i in range(len(df))]
             res = sorted(set(res), key=lambda x: res.index(x))
+            res = [int(i) if type(i) == np.int64 else i for i in res]
             return res
         else:
             res = [tuple(df.iloc[i]) for i in range(len(df))]
-            return res
+            res2 = []
+            for i in res:
+                temp = []
+                for j in i:
+                    if type(j) == np.int64:
+                        temp.append(int(j))
+                    else:
+                        temp.append(j)
+                res2.append(tuple(temp))
+            return res2
 
 
 def db_update(table, columns, values, where):
