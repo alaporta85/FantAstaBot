@@ -11,26 +11,9 @@ f.close()
 dispatcher = updater.dispatcher
 BLOCK = False
 group_id = -318148079
-# group_id = 67507055
 polps_id = 67507055
-jac_message = ("Impossibile riconoscere l'input. Correggere eventuali errori" +
-               " di scrittura o controllare che l'ordine di inserimento " +
-               "sia corretto.")
 
 separ = '\n\n' + '_' * 30 + '\n\n\n'
-
-
-def aaa(bot, update):
-
-	user = select_user(update)
-	dbf.db_update(
-			table='offers',
-			columns=['offer_status'],
-			values=['Not Official'],
-			where='offer_user = "{}" AND offer_status = "Winning"'.format(user))
-
-	return bot.send_message(chat_id=update.message.chat_id,
-	                        text='Puoi pagare')
 
 
 def aggiorna_offerte_chiuse(dt_now):
@@ -189,7 +172,7 @@ def check_autobid_format(args):
 		return message
 
 	# Cerco nel db il calciatore corrispondente
-	jpl = ef.jaccard_result(pl.upper(), dbf.db_select(
+	jpl = ef.jaccard_result(pl, dbf.db_select(
 			table='players',
 			columns_in=['player_name'],
 			where='player_status = "FREE"'), 3)
@@ -198,6 +181,282 @@ def check_autobid_format(args):
 				'scritto correttamente.')
 	else:
 		return jpl, ab
+
+
+def check_autobid_value(user, player, new_id, new_ab):
+
+	# Controllo se c'è già un'asta in corso per il calciatore
+	try:
+		last_id, last_user, last_offer = dbf.db_select(
+				table='offers',
+				columns_in=['offer_id', 'offer_user', 'offer_price'],
+				where=('offer_player = "{}" AND '.format(player) +
+				       'offer_status = "Winning"'))[0]
+
+	except IndexError:
+		last_id = 0
+		last_user = None
+		last_offer = 0
+
+	# Se non c'è, gestisco la situazione in modo da presentare automaticamente
+	# un'offerta a prezzo base oppure segnalare all'utente l'assenza di un'asta
+	# attiva
+	if not last_offer:
+		private, group = prezzo_base_automatico(user, new_id, player, new_ab,
+		                                        active=True)
+
+		return private, group
+
+	# Se invece c'è allora ne confronto il valore con l'autobid che si sta
+	# provando ad impostare. Se l'autobid è inferiore, lo elimino dal db e lo
+	# segnalo all'user
+	if new_ab <= last_offer:
+		dbf.db_delete(table='autobids', where='autobid_id = {}'.format(new_id))
+		return ("Valore autobid troppo basso. Impostare un valore superiore" +
+		        " all'attuale offerta vincente."), None
+
+	# Se è superiore allora devo controllare che l'user dell'ultima offerta non
+	# abbia impostato anche lui un autobid
+	else:
+		old_ab = dbf.db_select(
+				table='autobids',
+				columns_in=['autobid_id', 'autobid_nonce', 'autobid_tag',
+				            'autobid_value'],
+				where=('autobid_player = "{}" AND '.format(player) +
+				       'autobid_status = "Confirmed"'))
+
+		# Caso 1: non c'è autobid ed il detentore dell'offerta è un avversario.
+		# In questo caso l'avversario perde l'offerta a favore del nuovo user.
+		# Il valore della nuova offerta sarà automaticamente uguale ad 1
+		# fantamilione in più rispetto alla precedente
+		if not old_ab and user != last_user:
+
+			dbf.db_update(
+					table='offers',
+					columns=['offer_status'],
+					values=['Lost'],
+					where='offer_id = {}'.format(last_id))
+
+			dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+			pl_id = dbf.db_select(
+					table='players',
+					columns_in=['player_id'],
+					where='player_name = "{}"'.format(player))[0]
+
+			dbf.db_insert(
+					table='offers',
+					columns=['offer_user', 'offer_player', 'offer_player_id',
+					         'offer_price', 'offer_datetime', 'offer_status'],
+					values=[user, player, pl_id, last_offer + 1, dt, 'Winning'])
+
+			# Cancello l'autobid nel caso venga raggiunto il suo valore
+			if new_ab == last_offer + 1:
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(new_id))
+
+				private = ('Hai dovuto utilizzare tutto il tuo autobid. ' +
+				           'Reimposta un valore più alto nel caso volessi ' +
+				           'continuare ad usarlo.')
+			else:
+				dbf.db_update(
+						table='autobids',
+						columns=['autobid_status'],
+						values=['Confirmed'],
+						where='autobid_id = {}'.format(new_id))
+
+				private = ('Offerta aggiornata ed autobid impostato ' +
+				           'correttamente.')
+
+			group = ('<i>{}</i> rilancia per <b>{}</b>.'.format(user, player) +
+			         separ + crea_riepilogo(dt))
+
+			return private, group
+
+		# Caso 2: non c'è autobid ed il detentore dell'offerta è lo stesso user.
+		# In questo caso viene semplicemente impostato l'autobid
+		elif not old_ab and user == last_user:
+
+			dbf.db_update(
+					table='autobids',
+					columns=['autobid_status'],
+					values=['Confirmed'],
+					where='autobid_id = {}'.format(new_id))
+
+			return 'Autobid impostato correttamente.', None
+
+		# Se c'è già un autobid si aprono altri possibili casi
+		else:
+			old_id, last_nonce, last_tag, last_value = old_ab[0]
+			old_ab = int(dbf.decrypt_value(last_nonce, last_tag, last_value).
+			             decode())
+
+			# Caso 3: il nuovo autobid supera il vecchio ed il detentore
+			# dell'offerta è un avversario. Simile al Caso 1.
+			# Il valore della nuova offerta sarà automaticamente uguale ad 1
+			# fantamilione in più rispetto al precedente autobid
+			if new_ab > old_ab and user != last_user:
+
+				dbf.db_update(
+						table='offers',
+						columns=['offer_status'],
+						values=['Lost'],
+						where='offer_id = {}'.format(last_id))
+
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(old_id))
+
+				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+				pl_id = dbf.db_select(
+						table='players',
+						columns_in=['player_id'],
+						where='player_name = "{}"'.format(player))[0]
+
+				dbf.db_insert(
+						table='offers',
+						columns=['offer_user', 'offer_player',
+						         'offer_player_id',
+						         'offer_price', 'offer_datetime',
+						         'offer_status'],
+						values=[user, player, pl_id, old_ab + 1, dt,
+						        'Winning'])
+
+				if new_ab == old_ab + 1:
+					dbf.db_delete(
+							table='autobids',
+							where='autobid_id = {}'.format(new_id))
+
+					private = ('Hai dovuto utilizzare tutto il tuo autobid. ' +
+					           'Reimposta un valore più alto nel caso ' +
+					           'volessi continuare ad usarlo.')
+				else:
+					dbf.db_update(
+							table='autobids',
+							columns=['autobid_status'],
+							values=['Confirmed'],
+							where='autobid_id = {}'.format(new_id))
+
+					private = ('Offerta aggiornata ed autobid impostato ' +
+					           'correttamente.')
+
+				group = ('<i>{}</i> rilancia '.format(user) +
+						 'per <b>{}</b>.'.format(player) + separ +
+						 crea_riepilogo(dt))
+
+				return private, group
+
+			# Caso 4: il nuovo autobid supera il vecchio ed il detentore
+			# dell'offerta è lo stesso user. Viene aggiornato l'autobid
+			# precedente al nuovo valore più alto
+			elif new_ab > old_ab and user == last_user:
+
+				nonce, tag, value = dbf.encrypt_value(str(new_ab))
+				dbf.db_update(
+						table='autobids',
+						columns=['autobid_nonce', 'autobid_tag',
+						         'autobid_value'],
+						values=[nonce, tag, value],
+						where='autobid_id = {}'.format(old_id))
+
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(new_id))
+
+				return ('Hai aumentato il tuo autobid per {} '.format(player) +
+				        'da {} a {}.'.format(old_ab, new_ab)), None
+
+			# Caso 5: il nuovo autobid non supera il vecchio ed il detentore
+			# dell'offerta è un avversario. Il nuovo autobid non viene
+			# confermato e l'offerta del detentore viene aggiornata ad un
+			# valore pari all'autobid tentato dall'user più 1 fantamilione
+			elif new_ab < old_ab and user != last_user:
+
+				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(new_id))
+
+				dbf.db_update(
+						table='offers',
+						columns=['offer_price', 'offer_datetime'],
+						values=[new_ab + 1, dt],
+						where='offer_id = {}'.format(last_id))
+
+				if old_ab == new_ab + 1:
+					dbf.db_delete(
+							table='autobids',
+							where='autobid_id = {}'.format(old_id))
+
+				private = 'Autobid troppo basso.'
+				group = ('<i>{}</i> ha tentato un rilancio'.format(user) +
+						 ' per <b>{}</b>.'.format(player) + separ +
+						 crea_riepilogo(dt))
+
+				return private, group
+
+			# Caso 6: il nuovo autobid non supera il vecchio ed il detentore
+			# dell'offerta è lo stesso user. Viene aggiornato l'autobid
+			# precedente al nuovo valore più basso
+			elif new_ab < old_ab and user == last_user:
+
+				nonce, tag, value = dbf.encrypt_value(str(new_ab))
+				dbf.db_update(
+						table='autobids',
+						columns=['autobid_nonce', 'autobid_tag',
+						         'autobid_value'],
+						values=[nonce, tag, value],
+						where='autobid_id = {}'.format(old_id))
+
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(new_id))
+
+				return ('Hai diminuito il tuo autobid per {} '.format(player) +
+				        'da {} a {}.'.format(old_ab, new_ab)), None
+
+			# Caso 7: il nuovo autobid è uguale al vecchio ed il detentore
+			# dell'offerta è un avversario. Viene convalidato quello del
+			# detentore per averlo impostato in anticipo
+			elif new_ab == old_ab and user != last_user:
+
+				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+				sex = dbf.db_select(
+						table='teams',
+						columns_in=['team_sex'],
+						where='team_name = "{}"'.format(last_user))[0]
+
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(new_id))
+
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(old_id))
+
+				dbf.db_update(
+						table='offers',
+						columns=['offer_price', 'offer_datetime'],
+						values=[new_ab, dt],
+						where='offer_id = {}'.format(last_id))
+
+				private = ("Autobid uguale a quello di {}.".format(last_user) +
+				           " Ha la precedenza " + sex + " perché l'ha " +
+				           "impostato prima.")
+				group = ('<i>{}</i> ha tentato un rilancio'.format(user) +
+						 ' per <b>{}</b>.'.format(player) + separ +
+						 crea_riepilogo(dt))
+
+				return private, group
+
+			# Caso 8: il nuovo autobid è uguale al vecchio ed il detentore
+			# dell'offerta è lo stesso user.
+			elif new_ab == old_ab and user == last_user:
+				return 'Hai già impostato questo valore di autobid.', None
 
 
 def check_offer_format(args):
@@ -426,20 +685,59 @@ def check_pago_format(args, user):
 		except ValueError:
 			pass
 
-		# Prendo dal db tutte le offerte 'Not Official' dell'user. Nel caso non
-		# ce ne siano mando un messaggio in chat
-		offers_user = dbf.db_select(
-				table='offers',
-				columns_in=['offer_player'],
-				where=('offer_user = "{}" AND '.format(user) +
-				       'offer_status = "Not Official"'))
-		if not len(offers_user):
-			return ('Pagamento non valido. Possibili cause:\n\n' +
-			        '\t\t\t- 24 ore non ancora trascorse;\n' +
-			        '\t\t\t- Giocatore di proprietà di un altro utente;\n' +
-			        '\t\t\t- Offerta inesistente')
+		j_pl = ef.jaccard_result(args[0],
+		                         dbf.db_select(
+				                         table='players',
+				                         columns_in=['player_name']), 3)
+		if not j_pl:
+			return 'Calciatore non riconosciuto.'
 
-		return args, offers_user
+		try:
+			offer = dbf.db_select(
+					table='offers',
+					columns_in=['offer_user', 'offer_status'],
+					where=('offer_player = "{}" AND '.format(j_pl) +
+					       'offer_status IS NOT NULL'))[-1]
+		except IndexError:
+			offer = None
+
+		if not offer:
+			return 'Asta inesistente.'
+		else:
+			off_user, status = offer
+			if status == 'Official':
+				return 'Calciatore già ufficializzato.'
+			elif status == 'Winning':
+				return 'Asta non ancora conclusa.'
+			elif status == 'Not Official' and user != off_user:
+				return 'Calciatore acquistato da: {}'.format(off_user)
+			else:
+				pagamento = args[1:]
+				rosa = dbf.db_select(
+						table='players',
+						columns_in=['player_name'],
+						where='player_status = "{}"'.format(user))
+
+				for i, pl in enumerate(pagamento):
+					try:
+						# noinspection PyTypeChecker
+						pagamento[i] = int(pl)
+						continue
+					except ValueError:
+						pl2 = ef.jaccard_result(pl, rosa, 3)
+						if not pl2:
+							return 'Calciatore non riconosciuto: {}'.format(pl)
+
+						tm, rls, pr = dbf.db_select(
+								table='players',
+								columns_in=['player_team', 'player_roles',
+								            'player_price'],
+								where='player_name = "{}"'.format(pl2))[0]
+
+						# noinspection PyTypeChecker
+						pagamento[i] = (pl2, tm, rls, pr)
+
+				return j_pl, pagamento
 
 
 def conferma_autobid(bot, update):
@@ -484,269 +782,309 @@ def conferma_autobid(bot, update):
 	new_id, pl, nonce, tag, encr_value = autobids[-1]
 	new_ab = int(dbf.decrypt_value(nonce, tag, encr_value).decode())
 
-	# Controllo se c'è già un'asta in corso per il calciatore
-	try:
-		last_id, last_user, last_offer = dbf.db_select(
-				table='offers',
-				columns_in=['offer_id', 'offer_user', 'offer_price'],
-				where=('offer_player = "{}" AND '.format(pl) +
-				       'offer_status = "Winning"'))[0]
+	private, group = check_autobid_value(user, pl, new_id, new_ab)
 
-	except IndexError:
-		last_id = 0
-		last_user = None
-		last_offer = 0
+	if private:
+		bot.send_message(parse_mode='HTML', chat_id=chat_id, text=private)
+	if group:
+		bot.send_message(parse_mode='HTML', chat_id=group_id, text=group)
 
-	# Se non c'è, gestisco la situazione in modo da presentare automaticamente
-	# un'offerta a prezzo base oppure segnalare all'utente l'assenza di un'asta
-	# attiva
-	if not last_offer:
-		message = prezzo_base_automatico(user, new_id, pl, new_ab, active=True)
-
-		if type(message) == tuple:
-			return bot.send_message(chat_id=chat_id, text=message[1])
-		else:
-			return bot.send_message(parse_mode='HTML', chat_id=group_id,
-			                        text=message)
-
-	if new_ab <= last_offer:
-		dbf.db_delete(table='autobids', where='autobid_id = {}'.format(new_id))
-		return bot.send_message(chat_id=chat_id,
-		                        text=("Valore autobid troppo basso. " +
-		                              "Impostare un valore superiore" +
-		                              " all'attuale offerta vincente."))
-	else:
-		old_ab = dbf.db_select(
-				table='autobids',
-				columns_in=['autobid_id', 'autobid_nonce', 'autobid_tag',
-				            'autobid_value'],
-				where=('autobid_player = "{}" AND '.format(pl) +
-				       'autobid_status = "Confirmed"'))
-
-		if not old_ab and user != last_user:
-
-			dbf.db_update(
-					table='offers',
-					columns=['offer_status'],
-					values=['Lost'],
-					where='offer_id = {}'.format(last_id))
-
-			dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-			pl_id = dbf.db_select(
-					table='players',
-					columns_in=['player_id'],
-					where='player_name = "{}"'.format(pl))[0]
-
-			dbf.db_insert(
-					table='offers',
-					columns=['offer_user', 'offer_player', 'offer_player_id',
-					         'offer_price', 'offer_datetime', 'offer_status'],
-					values=[user, pl, pl_id, last_offer + 1, dt, 'Winning'])
-
-			if new_ab == last_offer + 1:
-				dbf.db_delete(
-						table='autobids',
-						where='autobid_id = {}'.format(new_id))
-
-				bot.send_message(chat_id=chat_id,
-				                 text=('Hai dovuto utilizzare tutto il tuo ' +
-				                       'autobid. Reimposta un valore più ' +
-				                       'alto nel caso volessi continuare ' +
-				                       'ad usarlo.'))
-			else:
-				dbf.db_update(
-						table='autobids',
-						columns=['autobid_status'],
-						values=['Confirmed'],
-						where='autobid_id = {}'.format(new_id))
-
-				bot.send_message(chat_id=chat_id,
-				                 text=('Offerta aggiornata ed autobid ' +
-				                       'impostato correttamente.'))
-
-			return bot.send_message(parse_mode='HTML', chat_id=group_id,
-			                        text=('<i>{}</i> rilancia '.format(user) +
-			                              'per <b>{}</b>.'.format(pl) + separ +
-			                              crea_riepilogo(dt)))
-
-		elif not old_ab and user == last_user:
-
-			dbf.db_update(
-					table='autobids',
-					columns=['autobid_status'],
-					values=['Confirmed'],
-					where='autobid_id = {}'.format(new_id))
-
-			return bot.send_message(chat_id=chat_id,
-			                        text='Autobid impostato correttamente.')
-
-		else:
-			old_id, last_nonce, last_tag, last_value = old_ab[0]
-			old_ab = int(dbf.decrypt_value(last_nonce, last_tag, last_value).
-			             decode())
-
-			if new_ab > old_ab and user != last_user:
-
-				dbf.db_update(
-						table='offers',
-						columns=['offer_status'],
-						values=['Lost'],
-						where='offer_id = {}'.format(last_id))
-
-				dbf.db_delete(
-						table='autobids',
-				        where='autobid_id = {}'.format(old_id))
-
-				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-				pl_id = dbf.db_select(
-						table='players',
-						columns_in=['player_id'],
-						where='player_name = "{}"'.format(pl))[0]
-
-				dbf.db_insert(
-						table='offers',
-						columns=['offer_user', 'offer_player',
-						         'offer_player_id',
-						         'offer_price', 'offer_datetime',
-						         'offer_status'],
-						values=[user, pl, pl_id, old_ab + 1, dt,
-						        'Winning'])
-
-				if new_ab == old_ab + 1:
-					dbf.db_delete(
-							table='autobids',
-							where='autobid_id = {}'.format(new_id))
-
-					bot.send_message(chat_id=chat_id,
-					                 text=('Hai dovuto utilizzare tutto il ' +
-					                       'tuo autobid. Reimposta un valore' +
-					                       ' più alto nel caso volessi ' +
-					                       'continuare ad usarlo.'))
-				else:
-					dbf.db_update(
-							table='autobids',
-							columns=['autobid_status'],
-							values=['Confirmed'],
-							where='autobid_id = {}'.format(new_id))
-
-					bot.send_message(chat_id=chat_id,
-					                 text=('Offerta aggiornata ed autobid ' +
-					                       'impostato correttamente.'))
-
-				return bot.send_message(
-						parse_mode='HTML', chat_id=group_id,
-				        text=('<i>{}</i> rilancia '.format(user) +
-				              'per <b>{}</b>.'.format(pl) + separ +
-				              crea_riepilogo(dt)))
-
-			elif new_ab > old_ab and user == last_user:
-
-				nonce, tag, value = dbf.encrypt_value(str(new_ab))
-				dbf.db_update(
-						table='autobids',
-						columns=['autobid_nonce', 'autobid_tag',
-						         'autobid_value'],
-						values=[nonce, tag, value],
-						where='autobid_id = {}'.format(old_id))
-
-				dbf.db_delete(
-						table='autobids',
-						where='autobid_id = {}'.format(new_id))
-
-				return bot.send_message(chat_id=chat_id,
-				                        text=('Hai aumentato il tuo ' +
-				                              'autobid per {} '.format(pl) +
-				                              'da {} a {}.'.format(old_ab,
-				                                                   new_ab)))
-
-			elif new_ab < old_ab and user != last_user:
-
-				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-				dbf.db_delete(
-						table='autobids',
-						where='autobid_id = {}'.format(new_id))
-
-				dbf.db_update(
-						table='offers',
-						columns=['offer_price', 'offer_datetime'],
-						values=[new_ab + 1, dt],
-						where='offer_id = {}'.format(last_id))
-
-				if old_ab == new_ab + 1:
-					dbf.db_delete(
-							table='autobids',
-							where='autobid_id = {}'.format(old_id))
-
-				bot.send_message(chat_id=chat_id, text='Autobid troppo basso.')
-
-				return bot.send_message(
-						parse_mode='HTML', chat_id=group_id,
-						text=('<i>{}</i> ha tentato un rilancio'.format(user) +
-						      ' per <b>{}</b>.'.format(pl) + separ +
-						      crea_riepilogo(dt)))
-
-			elif new_ab < old_ab and user == last_user:
-
-				nonce, tag, value = dbf.encrypt_value(str(new_ab))
-				dbf.db_update(
-						table='autobids',
-						columns=['autobid_nonce', 'autobid_tag',
-						         'autobid_value'],
-						values=[nonce, tag, value],
-						where='autobid_id = {}'.format(old_id))
-
-				dbf.db_delete(
-						table='autobids',
-						where='autobid_id = {}'.format(new_id))
-
-				return bot.send_message(chat_id=chat_id,
-				                        text=('Hai diminuito il tuo ' +
-				                              'autobid per {} '.format(pl) +
-				                              'da {} a {}.'.format(old_ab,
-				                                                   new_ab)))
-
-			elif new_ab == old_ab and user != last_user:
-
-				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-				sex = dbf.db_select(
-						table='teams',
-						columns_in=['team_sex'],
-						where='team_name = "{}"'.format(last_user))[0]
-
-				dbf.db_delete(
-						table='autobids',
-						where='autobid_id = {}'.format(new_id))
-
-				dbf.db_delete(
-						table='autobids',
-						where='autobid_id = {}'.format(old_id))
-
-				dbf.db_update(
-						table='offers',
-						columns=['offer_price', 'offer_datetime'],
-						values=[new_ab, dt],
-						where='offer_id = {}'.format(last_id))
-
-				bot.send_message(chat_id=chat_id,
-				                 text="Autobid uguale a quello di " +
-				                      "{}. Ha la ".format(last_user) +
-				                      "precedenza " + sex +
-				                      " perché l'ha impostato prima.")
-
-				return bot.send_message(
-						parse_mode='HTML', chat_id=group_id,
-				        text=('<i>{}</i> ha tentato un rilancio'.format(user) +
-						      ' per <b>{}</b>.'.format(pl) + separ +
-						      crea_riepilogo(dt)))
-
-			elif new_ab == old_ab and user == last_user:
-				return bot.send_message(chat_id=chat_id,
-				                        text=('Hai già impostato questo ' +
-				                              'valore di autobid.'))
+	# # Controllo se c'è già un'asta in corso per il calciatore
+	# try:
+	# 	last_id, last_user, last_offer = dbf.db_select(
+	# 			table='offers',
+	# 			columns_in=['offer_id', 'offer_user', 'offer_price'],
+	# 			where=('offer_player = "{}" AND '.format(pl) +
+	# 			       'offer_status = "Winning"'))[0]
+	#
+	# except IndexError:
+	# 	last_id = 0
+	# 	last_user = None
+	# 	last_offer = 0
+	#
+	# # Se non c'è, gestisco la situazione in modo da presentare automaticamente
+	# # un'offerta a prezzo base oppure segnalare all'utente l'assenza di un'asta
+	# # attiva
+	# if not last_offer:
+	# 	message = prezzo_base_automatico(user, new_id, pl, new_ab, active=True)
+	#
+	# 	if type(message) == tuple:
+	# 		return bot.send_message(chat_id=chat_id, text=message[1])
+	# 	else:
+	# 		return bot.send_message(parse_mode='HTML', chat_id=group_id,
+	# 		                        text=message)
+	#
+	# # Se invece c'è allora ne confronto il valore con l'autobid che si sta
+	# # provando ad impostare. Se l'autobid è inferiore, lo elimino dal db e lo
+	# # segnalo all'user
+	# if new_ab <= last_offer:
+	# 	dbf.db_delete(table='autobids', where='autobid_id = {}'.format(new_id))
+	# 	return bot.send_message(chat_id=chat_id,
+	# 	                        text=("Valore autobid troppo basso. " +
+	# 	                              "Impostare un valore superiore" +
+	# 	                              " all'attuale offerta vincente."))
+	#
+	# # Se è superiore allora devo controllare che l'user dell'ultima offerta non
+	# # abbia impostato anche lui un autobid
+	# else:
+	# 	old_ab = dbf.db_select(
+	# 			table='autobids',
+	# 			columns_in=['autobid_id', 'autobid_nonce', 'autobid_tag',
+	# 			            'autobid_value'],
+	# 			where=('autobid_player = "{}" AND '.format(pl) +
+	# 			       'autobid_status = "Confirmed"'))
+	#
+	# 	# Caso 1: non c'è autobid ed il detentore dell'offerta è un avversario.
+	# 	# In questo caso l'avversario perde l'offerta a favore del nuovo user.
+	# 	# Il valore della nuova offerta sarà automaticamente uguale ad 1
+	# 	# fantamilione in più rispetto alla precedente
+	# 	if not old_ab and user != last_user:
+	#
+	# 		dbf.db_update(
+	# 				table='offers',
+	# 				columns=['offer_status'],
+	# 				values=['Lost'],
+	# 				where='offer_id = {}'.format(last_id))
+	#
+	# 		dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+	#
+	# 		pl_id = dbf.db_select(
+	# 				table='players',
+	# 				columns_in=['player_id'],
+	# 				where='player_name = "{}"'.format(pl))[0]
+	#
+	# 		dbf.db_insert(
+	# 				table='offers',
+	# 				columns=['offer_user', 'offer_player', 'offer_player_id',
+	# 				         'offer_price', 'offer_datetime', 'offer_status'],
+	# 				values=[user, pl, pl_id, last_offer + 1, dt, 'Winning'])
+	#
+	# 		# Cancello l'autobid nel caso venga raggiunto il suo valore
+	# 		if new_ab == last_offer + 1:
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 					where='autobid_id = {}'.format(new_id))
+	#
+	# 			bot.send_message(chat_id=chat_id,
+	# 			                 text=('Hai dovuto utilizzare tutto il tuo ' +
+	# 			                       'autobid. Reimposta un valore più ' +
+	# 			                       'alto nel caso volessi continuare ' +
+	# 			                       'ad usarlo.'))
+	# 		else:
+	# 			dbf.db_update(
+	# 					table='autobids',
+	# 					columns=['autobid_status'],
+	# 					values=['Confirmed'],
+	# 					where='autobid_id = {}'.format(new_id))
+	#
+	# 			bot.send_message(chat_id=chat_id,
+	# 			                 text=('Offerta aggiornata ed autobid ' +
+	# 			                       'impostato correttamente.'))
+	#
+	# 		return bot.send_message(parse_mode='HTML', chat_id=group_id,
+	# 		                        text=('<i>{}</i> rilancia '.format(user) +
+	# 		                              'per <b>{}</b>.'.format(pl) + separ +
+	# 		                              crea_riepilogo(dt)))
+	#
+	# 	# Caso 2: non c'è autobid ed il detentore dell'offerta è lo stesso user.
+	# 	# In questo caso viene semplicemente impostato l'autobid
+	# 	elif not old_ab and user == last_user:
+	#
+	# 		dbf.db_update(
+	# 				table='autobids',
+	# 				columns=['autobid_status'],
+	# 				values=['Confirmed'],
+	# 				where='autobid_id = {}'.format(new_id))
+	#
+	# 		return bot.send_message(chat_id=chat_id,
+	# 		                        text='Autobid impostato correttamente.')
+	#
+	# 	# Se c'è già un autobid si aprono altri possibili casi
+	# 	else:
+	# 		old_id, last_nonce, last_tag, last_value = old_ab[0]
+	# 		old_ab = int(dbf.decrypt_value(last_nonce, last_tag, last_value).
+	# 		             decode())
+	#
+	# 		# Caso 3: il nuovo autobid supera il vecchio ed il detentore
+	# 		# dell'offerta è un avversario. Simile al Caso 1.
+	# 		# Il valore della nuova offerta sarà automaticamente uguale ad 1
+	# 		# fantamilione in più rispetto al precedente autobid
+	# 		if new_ab > old_ab and user != last_user:
+	#
+	# 			dbf.db_update(
+	# 					table='offers',
+	# 					columns=['offer_status'],
+	# 					values=['Lost'],
+	# 					where='offer_id = {}'.format(last_id))
+	#
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 			        where='autobid_id = {}'.format(old_id))
+	#
+	# 			dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+	#
+	# 			pl_id = dbf.db_select(
+	# 					table='players',
+	# 					columns_in=['player_id'],
+	# 					where='player_name = "{}"'.format(pl))[0]
+	#
+	# 			dbf.db_insert(
+	# 					table='offers',
+	# 					columns=['offer_user', 'offer_player',
+	# 					         'offer_player_id',
+	# 					         'offer_price', 'offer_datetime',
+	# 					         'offer_status'],
+	# 					values=[user, pl, pl_id, old_ab + 1, dt,
+	# 					        'Winning'])
+	#
+	# 			if new_ab == old_ab + 1:
+	# 				dbf.db_delete(
+	# 						table='autobids',
+	# 						where='autobid_id = {}'.format(new_id))
+	#
+	# 				bot.send_message(chat_id=chat_id,
+	# 				                 text=('Hai dovuto utilizzare tutto il ' +
+	# 				                       'tuo autobid. Reimposta un valore' +
+	# 				                       ' più alto nel caso volessi ' +
+	# 				                       'continuare ad usarlo.'))
+	# 			else:
+	# 				dbf.db_update(
+	# 						table='autobids',
+	# 						columns=['autobid_status'],
+	# 						values=['Confirmed'],
+	# 						where='autobid_id = {}'.format(new_id))
+	#
+	# 				bot.send_message(chat_id=chat_id,
+	# 				                 text=('Offerta aggiornata ed autobid ' +
+	# 				                       'impostato correttamente.'))
+	#
+	# 			return bot.send_message(
+	# 					parse_mode='HTML', chat_id=group_id,
+	# 			        text=('<i>{}</i> rilancia '.format(user) +
+	# 			              'per <b>{}</b>.'.format(pl) + separ +
+	# 			              crea_riepilogo(dt)))
+	#
+	# 		# Caso 4: il nuovo autobid supera il vecchio ed il detentore
+	# 		# dell'offerta è lo stesso user. Viene aggiornato l'autobid
+	# 		# precedente al nuovo valore più alto
+	# 		elif new_ab > old_ab and user == last_user:
+	#
+	# 			nonce, tag, value = dbf.encrypt_value(str(new_ab))
+	# 			dbf.db_update(
+	# 					table='autobids',
+	# 					columns=['autobid_nonce', 'autobid_tag',
+	# 					         'autobid_value'],
+	# 					values=[nonce, tag, value],
+	# 					where='autobid_id = {}'.format(old_id))
+	#
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 					where='autobid_id = {}'.format(new_id))
+	#
+	# 			return bot.send_message(chat_id=chat_id,
+	# 			                        text=('Hai aumentato il tuo ' +
+	# 			                              'autobid per {} '.format(pl) +
+	# 			                              'da {} a {}.'.format(old_ab,
+	# 			                                                   new_ab)))
+	#
+	# 		# Caso 5: il nuovo autobid non supera il vecchio ed il detentore
+	# 		# dell'offerta è un avversario. Il nuovo autobid non viene
+	# 		# confermato e l'offerta del detentore viene aggiornata ad un
+	# 		# valore pari all'autobid tentato dall'user più 1 fantamilione
+	# 		elif new_ab < old_ab and user != last_user:
+	#
+	# 			dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+	#
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 					where='autobid_id = {}'.format(new_id))
+	#
+	# 			dbf.db_update(
+	# 					table='offers',
+	# 					columns=['offer_price', 'offer_datetime'],
+	# 					values=[new_ab + 1, dt],
+	# 					where='offer_id = {}'.format(last_id))
+	#
+	# 			if old_ab == new_ab + 1:
+	# 				dbf.db_delete(
+	# 						table='autobids',
+	# 						where='autobid_id = {}'.format(old_id))
+	#
+	# 			bot.send_message(chat_id=chat_id, text='Autobid troppo basso.')
+	#
+	# 			return bot.send_message(
+	# 					parse_mode='HTML', chat_id=group_id,
+	# 					text=('<i>{}</i> ha tentato un rilancio'.format(user) +
+	# 					      ' per <b>{}</b>.'.format(pl) + separ +
+	# 					      crea_riepilogo(dt)))
+	#
+	# 		# Caso 6: il nuovo autobid non supera il vecchio ed il detentore
+	# 		# dell'offerta è lo stesso user. Viene aggiornato l'autobid
+	# 		# precedente al nuovo valore più basso
+	# 		elif new_ab < old_ab and user == last_user:
+	#
+	# 			nonce, tag, value = dbf.encrypt_value(str(new_ab))
+	# 			dbf.db_update(
+	# 					table='autobids',
+	# 					columns=['autobid_nonce', 'autobid_tag',
+	# 					         'autobid_value'],
+	# 					values=[nonce, tag, value],
+	# 					where='autobid_id = {}'.format(old_id))
+	#
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 					where='autobid_id = {}'.format(new_id))
+	#
+	# 			return bot.send_message(chat_id=chat_id,
+	# 			                        text=('Hai diminuito il tuo ' +
+	# 			                              'autobid per {} '.format(pl) +
+	# 			                              'da {} a {}.'.format(old_ab,
+	# 			                                                   new_ab)))
+	#
+	# 		# Caso 7: il nuovo autobid è uguale al vecchio ed il detentore
+	# 		# dell'offerta è un avversario. Viene convalidato quello del
+	# 		# detentore per averlo impostato in anticipo
+	# 		elif new_ab == old_ab and user != last_user:
+	#
+	# 			dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+	#
+	# 			sex = dbf.db_select(
+	# 					table='teams',
+	# 					columns_in=['team_sex'],
+	# 					where='team_name = "{}"'.format(last_user))[0]
+	#
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 					where='autobid_id = {}'.format(new_id))
+	#
+	# 			dbf.db_delete(
+	# 					table='autobids',
+	# 					where='autobid_id = {}'.format(old_id))
+	#
+	# 			dbf.db_update(
+	# 					table='offers',
+	# 					columns=['offer_price', 'offer_datetime'],
+	# 					values=[new_ab, dt],
+	# 					where='offer_id = {}'.format(last_id))
+	#
+	# 			bot.send_message(chat_id=chat_id,
+	# 			                 text="Autobid uguale a quello di " +
+	# 			                      "{}. Ha la ".format(last_user) +
+	# 			                      "precedenza " + sex +
+	# 			                      " perché l'ha impostato prima.")
+	#
+	# 			return bot.send_message(
+	# 					parse_mode='HTML', chat_id=group_id,
+	# 			        text=('<i>{}</i> ha tentato un rilancio'.format(user) +
+	# 					      ' per <b>{}</b>.'.format(pl) + separ +
+	# 					      crea_riepilogo(dt)))
+	#
+	# 		# Caso 8: il nuovo autobid è uguale al vecchio ed il detentore
+	# 		# dell'offerta è lo stesso user.
+	# 		elif new_ab == old_ab and user == last_user:
+	# 			return bot.send_message(chat_id=chat_id,
+	# 			                        text=('Hai già impostato questo ' +
+	# 			                              'valore di autobid.'))
 
 
 def conferma_offerta(bot, update):
@@ -1048,84 +1386,53 @@ def message_with_offers(list_of_offers, shift, dt_now, msg):
 	return msg
 
 
-def message_with_payment(bot, update, user, user_input, offers_user):
+def message_with_payment(user, acquisto, pagamento):
 
 	"""
 	Crea il messaggio di riepilogo del pagamento.
 	Utilizzato all'interno della funzione pago().
 
-	:param bot:
-	:param update:
+
 	:param user: str, nome della fantasquadra
-	:param user_input: list, [giocatore da pagare, metodo di pagamento]
-	:param offers_user: list, tutte le offerte dell'user in stato Not Official
+	:param acquisto: str, giocatore da pagare
+	:param pagamento: list, metodo di pagamento
 
 	:return money_db: list, user_input dopo la correzioni dei nomi
 	:return message: str, messaggio di riepilogo
 
 	"""
 
-	chat_id = update.message.chat_id
-
 	# Nel pagamento proposto dall'user separo i calciatori dai soldi
-	pls = []
 	money = 0
-	for i in user_input:
-		try:
-			money = int(i)
-		except ValueError:
-			pls.append(i)
-
-	# Tra i calciatori separo quello da acquistare da quelli da svincolare
-	acquisto, pagamento = pls[0], pls[1:]
+	for i in pagamento:
+		if type(i) == int:
+			money += i
 
 	# Gestisco prima tutta la parte relativa all'acquisto
-	pl = ef.jaccard_result(acquisto.upper(), offers_user, 3)
-	if not pl:
-		return bot.send_message(chat_id=chat_id,
-		                        text=jac_message)
-
 	off_id, price = dbf.db_select(
 			table='offers',
 			columns_in=['offer_id', 'offer_price'],
-			where='offer_player = "{}"'.format(pl))[-1]
+			where=('offer_player = "{}" AND '.format(acquisto) +
+			       'offer_status = "Not Official"'))[0]
 
 	dbf.db_insert(
 			table='pays',
 			columns=['pay_user', 'pay_offer',
 			         'pay_player', 'pay_price'],
-			values=[user, off_id, pl, price])
+			values=[user, off_id, acquisto, price])
 
 	team, roles = dbf.db_select(
 			table='players',
 			columns_in=['player_team', 'player_roles'],
-			where='player_name = "{}"'.format(pl))[0]
+			where='player_name = "{}"'.format(acquisto))[0]
 
 	message = ('<i>{}</i> ufficializza:\n\n\t\t\t\t\t\t'.format(user) +
-	           '<b>{}</b> <i>({})   {}</i>\n\n'.format(pl, team,
+	           '<b>{}</b> <i>({})   {}</i>\n\n'.format(acquisto, team,
 	                                                   roles) +
 	           'Prezzo: <b>{}</b>.\n\nPagamento:\n'.format(price))
 
-	# E poi quella relativa alle varie cessioni, se presenti
-	rosa = dbf.db_select(
-			table='players',
-			columns_in=['player_name'],
-			where='player_status = "{}"'.format(user))
-
-	for i, pl in enumerate(pagamento):
-		pl2 = ef.jaccard_result(pl.upper(), rosa, 3)
-		if not pl2:
-			return bot.send_message(chat_id=chat_id,
-			                        text=jac_message)
-
-		tm, rls, pr = dbf.db_select(
-				table='players',
-				columns_in=['player_team', 'player_roles', 'player_price'],
-				where='player_name = "{}"'.format(pl2))[0]
-
-		pagamento[i] = (pl2, tm, rls, pr)
-
 	# Formatto alcuni parametri per poi inviarli come messaggio in chat
+	pagamento = [el for el in pagamento if type(el) != int]
 	money_db = ', '.join(['{} ({}: {})'.format(el[0], el[1], el[3]) for el in
 	                      pagamento])
 	if money and len(pagamento):
@@ -1190,7 +1497,7 @@ def offro(bot, update, args):
 		offer, pl, team = result
 
 	# Cerco nel db la squadra corrispondente all'input dell'user
-	j_tm = ef.jaccard_result(team[:3].upper(),
+	j_tm = ef.jaccard_result(team[:3],
 	                         dbf.db_select(table='players',
 	                                       columns_in=['player_team']), 3)
 	if not j_tm:
@@ -1204,7 +1511,7 @@ def offro(bot, update, args):
 					where='player_team = "{}"'.format(j_tm))
 
 	# Cerco il calciatore corrispondente all'input dell'user ed aggiorno il db
-	pl = ef.jaccard_result(pl.upper(), pls, 3)
+	pl = ef.jaccard_result(pl, pls, 3)
 	if not pl:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Calciatore non riconosciuto, riprova.')
@@ -1291,12 +1598,11 @@ def pago(bot, update, args):
 	if type(result) == str:
 		return bot.send_message(chat_id=chat_id, text=result)
 	else:
-		args, offers_user = result
+		acquisto, pagamento = result
 
 	# Creo il messaggio di conferma ed aggiorno il db con il pagamento
 	# provvisorio
-	money_db, message = message_with_payment(bot, update, user, args,
-	                                         offers_user)
+	money_db, message = message_with_payment(user, acquisto, pagamento)
 
 	dbf.db_update(
 			table='pays',
@@ -1335,13 +1641,13 @@ def prezzo(bot, update, args):
 	pl, tm = args
 
 	tm = ef.jaccard_result(
-			tm.upper(), dbf.db_select(table='players',
-			                          columns_in=['player_team']), 3)
+			tm, dbf.db_select(table='players',
+			                  columns_in=['player_team']), 3)
 	if not tm:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Squadra non riconosciuta, riprova.')
 
-	pl = ef.jaccard_result(pl.upper(),
+	pl = ef.jaccard_result(pl,
 	                       dbf.db_select(
 			                       table='players',
 			                       columns_in=['player_name'],
@@ -1396,8 +1702,8 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 					table='autobids',
 					where='autobid_id = {}'.format(ab_id))
 
-			return False, ('Valore autobid troppo basso. ' +
-			               'Prezzo base: {}'.format(pr_base))
+			return ('Valore autobid troppo basso. ' +
+			        'Prezzo base: {}'.format(pr_base)), None
 
 		dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1417,15 +1723,16 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 		               'offre prezzo base ed imposta autobid ' +
 		               'per {}'.format(player_name))
 
-		return ('<i>{}</i> offre per <b>{}</b>'.format(user, player_name) +
-		        separ + crea_riepilogo(dt))
+		return None, ('<i>{}</i> offre per <b>{}</b>'.format(user,
+		                                                     player_name) +
+		              separ + crea_riepilogo(dt))
 
 	else:
 		dbf.db_delete(
 				table='autobids',
 				where='autobid_id = {}'.format(ab_id))
 
-		return False, 'Nessuna asta trovata per il calciatore scelto.'
+		return 'Nessuna asta trovata per il calciatore scelto.', None
 
 
 def print_rosa(bot, update):
@@ -1594,7 +1901,6 @@ def ufficiali(bot, update):
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
-# aaa_handler = CommandHandler('aaa', aaa)
 autobid_handler = CommandHandler('autobid', autobid, pass_args=True)
 conferma_autobid_handler = CommandHandler('conferma_autobid', conferma_autobid)
 conferma_offerta_handler = CommandHandler('conferma_offerta', conferma_offerta)
@@ -1608,7 +1914,6 @@ riepilogo_handler = CommandHandler('riepilogo', riepilogo)
 rosa_handler = CommandHandler('rosa', print_rosa)
 ufficiali_handler = CommandHandler('ufficiali', ufficiali)
 
-# dispatcher.add_handler(aaa_handler)
 dispatcher.add_handler(autobid_handler)
 dispatcher.add_handler(conferma_autobid_handler)
 dispatcher.add_handler(conferma_offerta_handler)
@@ -1622,5 +1927,4 @@ dispatcher.add_handler(rosa_handler)
 dispatcher.add_handler(ufficiali_handler)
 
 updater.start_polling()
-# logger = log.set_logging()
 updater.idle()
