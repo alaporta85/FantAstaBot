@@ -1,8 +1,11 @@
-Questo bot ha 11 comandi che permetteranno di effettuare tutte le operazionixx
+Questo bot ha 12 comandi che permetteranno di effettuare tutte le operazionixx
 necessarie in sede di mercato.
 
 IMPORTANTE: Ogni comando DEVE essere inviato in chat privata con il bot.xx
 Nel gruppo ufficiale verranno inviati tutti i riepiloghi.
+
+
+                    <b>OFFERTE</b>
 
 1) /offro: Utilizzato sia per presentare una nuova offerta sia per rilanciarexx
 un'offerta già esistente. L'offerta DEVE essere presentata nella forma
@@ -22,8 +25,22 @@ maggiori saranno le probabilità che il codice lo riconosca.
 NOTA 2: Non è necessario scrivere il nome intero della squadra. Le prime 3xx
 lettere o le abbreviazioni (juve, samp, fiore, toro, ecc) sono comunque validi.
 
+NOTA3: Un'offerta (o un rilancio) può anche essere presentata utilizzando ilxx
+comando /autobid, come spiegato in /info_autobid.
 
-2) /pago: Utilizzato per ufficializzare le aste concluse ed effettuare ilxx
+
+2) /conferma_offerta: non ha bisogno di spiegazioni
+
+
+3) /riepilogo: mostra le aste in corso e quelle concluse
+
+
+4) /ufficiali: mostra tutte le ufficializzazioni eseguite
+
+
+                    <b>PAGAMENTI</b>
+
+5) /pago: Utilizzato per ufficializzare le aste concluse ed effettuare ilxx
 pagamento. Il comando DEVE avere la forma
 
           /pago calciatore, modo di pagamento
@@ -36,31 +53,40 @@ Vale lo stesso discorso di prima sull'importanza della virgola e sui nomi deixx
 calciatori.
 
 
-3) /conferma_offerta: non ha bisogno di spiegazioni
+6) /conferma_pagamento: non ha bisogno di spiegazioni
 
 
-4) /conferma_pagamento: non ha bisogno di spiegazioni
+                    <b>AUTOBID</b>
 
 
-5) /riepilogo: mostra le aste in corso e quelle concluse
-
-
-6) /rosa: mostra la rosa aggiornata di colui che invia il comando
-
-
-7) /prezzo: mostra il prezzo del giocatore richiesto e la fantasquadra dixx
-appartenenza (o lo status di svincolato). Il comando DEVE avere la forma:
-
-          /prezzo calciatore, squadra
-
-
-8) /autobid: imposta il valore massimo del rilancio automatico. Il comandoxx
-DEVE avere la forma:
+7) /autobid: Utilizzato per impostare il valore massimo del rilancioxx
+automatico. Il comando DEVE avere la forma:
 
           /autobid calciatore, valore
 
 
-9) /conferma_autobid: non ha bisogno di spiegazioni
+8) /conferma_autobid: non ha bisogno di spiegazioni
 
 
-10) /ufficiali: mostra tutte le ufficializzazioni eseguite
+9) /elimina_autobid: Utilizzato per eliminare un autobid precedentementexx
+impostato. Il comando DEVE avere la forma:
+
+          /elimina_autobid calciatore
+
+
+10) /riepilogo_autobid: Utilizzato per controllare tutti i propri autobidxx
+ancora attivi
+
+
+11) /info_autobid: Spiegazione del funzionamento dell'autobid
+
+
+                    <b>EXTRA</b>
+
+12) /rosa: mostra la rosa aggiornata di colui che invia il comando
+
+
+13) /prezzo: mostra il prezzo del giocatore richiesto e la fantasquadra dixx
+appartenenza (o lo status di svincolato). Il comando DEVE avere la forma:
+
+          /prezzo calciatore, squadra

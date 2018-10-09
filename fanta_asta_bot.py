@@ -9,8 +9,8 @@ f = open('token.txt', 'r')
 updater = Updater(token=f.readline())
 f.close()
 dispatcher = updater.dispatcher
-BLOCK = False
-group_id = -318148079
+BLOCK = True
+fanta_id = -318148079
 polps_id = 67507055
 
 separ = '\n\n' + '_' * 30 + '\n\n\n'
@@ -90,7 +90,7 @@ def autobid(bot, update, args):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -456,6 +456,9 @@ def check_autobid_value(user, player, new_id, new_ab):
 			# Caso 8: il nuovo autobid è uguale al vecchio ed il detentore
 			# dell'offerta è lo stesso user.
 			elif new_ab == old_ab and user == last_user:
+				dbf.db_delete(
+						table='autobids',
+						where='autobid_id = {}'.format(new_id))
 				return 'Hai già impostato questo valore di autobid.', None
 
 
@@ -754,9 +757,13 @@ def conferma_autobid(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
+	if BLOCK:
+		group_id = polps_id
+	else:
+		group_id = fanta_id
 
 	user = select_user(update)
 
@@ -1101,9 +1108,13 @@ def conferma_offerta(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
+	if BLOCK:
+		group_id = polps_id
+	else:
+		group_id = fanta_id
 
 	user = select_user(update)
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1117,16 +1128,28 @@ def conferma_offerta(bot, update):
 
 	# Controllo che l'asta sia ancora aperta
 	if troppo_tardi(pl):
+		dbf.db_delete(
+				table='offers',
+				where=('offer_user = "{}" AND '.format(user) +
+				       'offer_status IS NULL'))
 		return bot.send_message(chat_id=chat_id,
 		                        text="Tempo scaduto, asta già chiusa.")
 
 	# Controllo che non si tratti di autorilancio
 	if autorilancio(user, pl):
+		dbf.db_delete(
+				table='offers',
+				where=('offer_user = "{}" AND '.format(user) +
+				       'offer_status IS NULL'))
 		return bot.send_message(chat_id=chat_id,
 		                        text="L'ultima offerta è già tua.")
 
 	# Controllo che il calciatore sia svincolato
 	if non_svincolato(pl):
+		dbf.db_delete(
+				table='offers',
+				where=('offer_user = "{}" AND '.format(user) +
+				       'offer_status IS NULL'))
 		return bot.send_message(chat_id=chat_id,
 								text='Giocatore non svincolato ({}).'.
 								format(non_svincolato(pl)))
@@ -1168,9 +1191,13 @@ def conferma_pagamento(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
+	if BLOCK:
+		group_id = polps_id
+	else:
+		group_id = fanta_id
 
 	user = select_user(update)
 
@@ -1324,6 +1351,24 @@ def crea_riepilogo(dt_now):
 	return message
 
 
+def crea_riepilogo_autobid(user):
+
+	autobids = dbf.db_select(
+			table='autobids',
+			columns_out=['autobid_id', 'autobid_user', 'autobid_status'],
+			where=('autobid_user = "{}" AND '.format(user) +
+			       'autobid_status = "Confirmed"'))
+	if not autobids:
+		return 'Nessun autobid attivo.'
+
+	message = 'I tuoi autobid attivi sono:\n\n'
+	for pl, nonce, tag, encr_ab in autobids:
+		decr_ab = int(dbf.decrypt_value(nonce, tag, encr_ab).decode())
+		message += '\t\t\t\t<b>{}</b>: {}\n'.format(pl, decr_ab)
+
+	return message
+
+
 def info(bot, update):
 
 	"""
@@ -1336,7 +1381,7 @@ def info(bot, update):
 
 	"""
 	chat_id = update.message.chat_id
-	if update.message.chat_id == group_id:
+	if update.message.chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1351,7 +1396,37 @@ def info(bot, update):
 
 	sf.logger.info('/INFO - {}'.format(select_user(update)))
 
-	return bot.send_message(chat_id=chat_id, text=message)
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
+
+
+def info_autobid(bot, update):
+
+	"""
+	Invia in chat le istruzioni sul funzionamento dell'autobid.
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
+	chat_id = update.message.chat_id
+	if update.message.chat_id == fanta_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
+	g = open('info_autobid.txt', 'r')
+	content = g.readlines()
+	g.close()
+
+	message = ''
+	for row in content:
+		row = row.replace('xx\n', ' ')
+		message += row
+
+	sf.logger.info('/INFO_AUTOBID - {}'.format(select_user(update)))
+
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
 def message_with_offers(list_of_offers, shift, dt_now, msg):
@@ -1479,7 +1554,7 @@ def offro(bot, update, args):
 	"""
 
 	chat_id = update.message.chat_id
-	if update.message.chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1582,7 +1657,7 @@ def pago(bot, update, args):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1627,7 +1702,7 @@ def prezzo(bot, update, args):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1719,10 +1794,6 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 				values=['Confirmed'],
 				where='autobid_id = {}'.format(ab_id))
 
-		sf.logger.info('PREZZO_BASE_AUTOMATICO - {} '.format(user) +
-		               'offre prezzo base ed imposta autobid ' +
-		               'per {}'.format(player_name))
-
 		return None, ('<i>{}</i> offre per <b>{}</b>'.format(user,
 		                                                     player_name) +
 		              separ + crea_riepilogo(dt))
@@ -1749,7 +1820,7 @@ def print_rosa(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1787,7 +1858,7 @@ def riepilogo(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1795,6 +1866,19 @@ def riepilogo(bot, update):
 
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id,
 	                        text=crea_riepilogo(dt))
+
+
+def riepilogo_autobid(bot, update):
+
+	chat_id = update.message.chat_id
+	if chat_id == fanta_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
+	user = select_user(update)
+
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id,
+	                        text=crea_riepilogo_autobid(user))
 
 
 def select_offer_to_confirm(user):
@@ -1870,7 +1954,7 @@ def ufficiali(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
-	if chat_id == group_id:
+	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
 
@@ -1907,10 +1991,13 @@ conferma_offerta_handler = CommandHandler('conferma_offerta', conferma_offerta)
 conferma_pagamento_handler = CommandHandler('conferma_pagamento',
                                             conferma_pagamento)
 info_handler = CommandHandler('info', info)
+info_autobid_handler = CommandHandler('info_autobid', info_autobid)
 offro_handler = CommandHandler('offro', offro, pass_args=True)
 pago_handler = CommandHandler('pago', pago, pass_args=True)
 prezzo_handler = CommandHandler('prezzo', prezzo, pass_args=True)
 riepilogo_handler = CommandHandler('riepilogo', riepilogo)
+riepilogo_autobid_handler = CommandHandler('riepilogo_autobid',
+                                           riepilogo_autobid)
 rosa_handler = CommandHandler('rosa', print_rosa)
 ufficiali_handler = CommandHandler('ufficiali', ufficiali)
 
@@ -1919,10 +2006,12 @@ dispatcher.add_handler(conferma_autobid_handler)
 dispatcher.add_handler(conferma_offerta_handler)
 dispatcher.add_handler(conferma_pagamento_handler)
 dispatcher.add_handler(info_handler)
+dispatcher.add_handler(info_autobid_handler)
 dispatcher.add_handler(offro_handler)
 dispatcher.add_handler(pago_handler)
 dispatcher.add_handler(prezzo_handler)
 dispatcher.add_handler(riepilogo_handler)
+dispatcher.add_handler(riepilogo_autobid_handler)
 dispatcher.add_handler(rosa_handler)
 dispatcher.add_handler(ufficiali_handler)
 
