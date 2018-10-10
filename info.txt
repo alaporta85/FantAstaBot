@@ -8,22 +8,26 @@ Nel gruppo ufficiale verranno inviati tutti i riepiloghi.
                     <b>OFFERTE</b>
 
 1) /offro: Utilizzato sia per presentare una nuova offerta sia per rilanciarexx
-un'offerta già esistente. L'offerta DEVE essere presentata nella forma
+un'offerta già esistente. L'offerta deve contenere il valore numerico e ilxx
+nome del calciatore in questione. L'ordine NON è importante.
+Se ad esempio volessi offrire 20 per Petagna il comando potrebbe essere unoxx
+tra:
 
-          /offro offerta, calciatore, squadra
+          /offro 20, petagna
+          /offro petagna, 20
 
-Se ad esempio volessi offrire 20 per Petagna il comando sarebbe:
-
-          /offro 20, petagna, spa
-
-IMPORTANTE: utilizzare la virgola per separare i 3 inputs.
+IMPORTANTE: utilizzare la virgola per separare i 2 inputs.
 
 NOTA 1: Il codice dovrebbe riconoscere il calciatore anche in caso dixx
 piccoli errori nel nome ma ovviamente più il nome che scrivete è corretto exx
 maggiori saranno le probabilità che il codice lo riconosca.
 
-NOTA 2: Non è necessario scrivere il nome intero della squadra. Le prime 3xx
-lettere o le abbreviazioni (juve, samp, fiore, toro, ecc) sono comunque validi.
+NOTA2: Ad ogni offerta inviata, il bot prova a riconoscere il giocatore daxx
+voi inviato e ad associarlo con uno degli svincolati. Quindi nel caso in cuixx
+il giocatore restituito dal bot non dovesse essere quello da voi richiesto,xx
+nonostante l'abbiate scritto correttamente, controllate che siaxx
+effettivamente svicolato o che l'asta in corso non sia in realtà conclusa.
+Discorso analogo per il comando /autobid.
 
 NOTA3: Un'offerta (o un rilancio) può anche essere presentata utilizzando ilxx
 comando /autobid, come spiegato in /info_autobid.
@@ -60,9 +64,11 @@ calciatori.
 
 
 7) /autobid: Utilizzato per impostare il valore massimo del rilancioxx
-automatico. Il comando DEVE avere la forma:
+automatico. L'autobid deve contenere il valore numerico e il nome delxx
+calciatore in questione. L'ordine NON è importante. Esempio:
 
-          /autobid calciatore, valore
+          /autobid 20, petagna
+          /autobid petagna, 20
 
 
 8) /conferma_autobid: non ha bisogno di spiegazioni

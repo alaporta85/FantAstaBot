@@ -55,12 +55,12 @@ comunque mio. Non succede nulla, il bot mi notificherà che avevo giàxx
 impostato quel valore di autobid.
 
 
-IMPORTANTE: Come spiegato nel caso 9, se io imposto un valore di autobidxx
-(quindi usando /autobid) uguale a quello che il mio avversario avevaxx
-impostato in precedenza, sarà lui ad avere la priorità per averlo impostatoxx
-prima ed il mio autobid verrà eliminato.
-Il discorso cambia nel caso io stia offrendo (quindi /offro stavolta) unxx
-valore identico all'autobid del mio avversario. In questo caso l'offertaxx
+<b>IMPORTANTE</b>: <i>Come spiegato nel caso 9, se io imposto un valore dixx
+autobid (quindi usando</i> /autobid<i>) uguale a quello che il mio avversarioxx
+aveva impostato in precedenza, sarà lui ad avere la priorità per averloxx
+impostato prima ed il mio autobid verrà eliminato.
+Il discorso cambia nel caso io stia offrendo (quindi</i> /offro <i>stavolta)xx
+un valore identico all'autobid del mio avversario. In questo caso l'offertaxx
 passerà a me al valore offerto.
 La differenza tra le due situazioni è rilevante: nel primo caso ci sono 2xx
 utenti che stanno impostando un autobid e quindi, se il valore è identico, èxx
@@ -69,4 +69,4 @@ utenti sta direttamente offrendo quella cifra ed è quindi corretto chexx
 l'asta passi a lui. Tra l'altro, se dessimo la priorità al vecchio utentexx
 allora dovremmo aggiornare la sua offerta ad un valore pari all'offerta da mexx
 presentata + 1 ma ciò non è possibile perché porterebbe ad un'offertaxx
-superiore al suo autobid.
+superiore al suo autobid.</i>

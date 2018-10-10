@@ -20,7 +20,8 @@ def aggiorna_acquisti(brow, fantasquadra, acquisti):
 
 	brow.get(url_acquisti)
 
-	select_team(brow, fantasquadra)
+	if fantasquadra != 'Ciolle United':
+		select_team(brow, fantasquadra)
 
 	pl_path = './/input[@name="keywords"]'
 	wait_visible(brow, WAIT, pl_path)
@@ -38,7 +39,7 @@ def aggiorna_acquisti(brow, fantasquadra, acquisti):
 	pr_box.send_keys(acquisti[1])
 	time.sleep(1)
 
-	brow.find_element_by_xpath('.//button[@onclick="buyPlayers()"]').click()
+	# brow.find_element_by_xpath('.//button[@onclick="buyPlayers()"]').click()
 	time.sleep(3)
 
 	logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisti[0]) +
@@ -54,7 +55,8 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 
 	brow.get(url_cessioni)
 
-	select_team(brow, fantasquadra)
+	if fantasquadra != 'Ciolle United':
+		select_team(brow, fantasquadra)
 
 	table = './/div[@id="playersBox"]'
 	wait_visible(brow, WAIT, table)
