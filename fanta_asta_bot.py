@@ -1005,6 +1005,16 @@ def crea_riepilogo(dt_now):
 
 def crea_riepilogo_autobid(user):
 
+	"""
+	Crea il messaggio di riepilogo degli autobid attivi dell'user.
+	Utilizzata dentro riepilogo_autobid().
+
+	:param user: str, fantasquadra
+
+	:return: str, messaggio in chat
+
+	"""
+
 	autobids = dbf.db_select(
 			table='autobids',
 			columns_out=['autobid_id', 'autobid_user', 'autobid_status'],
@@ -1024,7 +1034,7 @@ def crea_riepilogo_autobid(user):
 def info(bot, update):
 
 	"""
-	Invia in chat le info.
+	Invia in chat le info sui comandi.
 
 	:param bot:
 	:param update:
@@ -1062,6 +1072,7 @@ def info_autobid(bot, update):
 	:return: messaggio in chat
 
 	"""
+
 	chat_id = update.message.chat_id
 	if update.message.chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
@@ -1128,14 +1139,15 @@ def message_with_payment(user, acquisto, pagamento):
 	:return message: str, messaggio di riepilogo
 
 	"""
-	j_pl = ef.jaccard_result(
+
+	jpl = ef.jaccard_result(
 			acquisto,
 			dbf.db_select(
 					table='offers',
 					columns_in=['offer_player'],
 					where=('offer_user = "{}" AND '.format(user) +
 					       'offer_status = "Not Official"')), 3)
-	if not j_pl:
+	if not jpl:
 		return ("Pagamento non riuscito.\n" +
 				"Controlla che l'asta sia conclusa e che tu l'abbia vinta.")
 
@@ -1174,22 +1186,22 @@ def message_with_payment(user, acquisto, pagamento):
 	off_id, price = dbf.db_select(
 			table='offers',
 			columns_in=['offer_id', 'offer_price'],
-			where=('offer_player = "{}" AND '.format(j_pl) +
+			where=('offer_player = "{}" AND '.format(jpl) +
 			       'offer_status = "Not Official"'))[0]
 
 	dbf.db_insert(
 			table='pays',
 			columns=['pay_user', 'pay_offer',
 			         'pay_player', 'pay_price'],
-			values=[user, off_id, j_pl, price])
+			values=[user, off_id, jpl, price])
 
 	team, roles = dbf.db_select(
 			table='players',
 			columns_in=['player_team', 'player_roles'],
-			where='player_name = "{}"'.format(j_pl))[0]
+			where='player_name = "{}"'.format(jpl))[0]
 
 	message = ('Stai ufficializzando:\n\n\t\t\t\t\t\t' +
-	           '<b>{}</b> <i>({})   {}</i>\n\n'.format(j_pl, team, roles) +
+	           '<b>{}</b> <i>({})   {}</i>\n\n'.format(jpl, team, roles) +
 	           'Prezzo: <b>{}</b>.\n\nPagamento:\n'.format(price))
 
 	# Formatto alcuni parametri per poi inviarli come messaggio in chat
@@ -1555,6 +1567,16 @@ def riepilogo(bot, update):
 
 
 def riepilogo_autobid(bot, update):
+
+	"""
+	Manda in chat gli autobid attivi dell'user che invia il comando.
+
+	:param bot:
+	:param update:
+
+	:return: str, messaggio in chat
+
+	"""
 
 	chat_id = update.message.chat_id
 	if chat_id == fanta_id:
