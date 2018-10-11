@@ -1,4 +1,4 @@
-Questo bot ha 12 comandi che permetteranno di effettuare tutte le operazionixx
+Questo bot ha 14 comandi che permetteranno di effettuare tutte le operazionixx
 necessarie in sede di mercato.
 
 IMPORTANTE: Ogni comando DEVE essere inviato in chat privata con il bot.xx
@@ -24,7 +24,7 @@ maggiori saranno le probabilità che il codice lo riconosca.
 
 NOTA2: Ad ogni offerta inviata, il bot prova a riconoscere il giocatore daxx
 voi inviato e ad associarlo con uno degli svincolati. Quindi nel caso in cuixx
-il giocatore restituito dal bot non dovesse essere quello da voi richiesto,xx
+il giocatore restituito dal bot non dovesse essere quello da voi richiestoxx
 nonostante l'abbiate scritto correttamente, controllate che siaxx
 effettivamente svicolato o che l'asta in corso non sia in realtà conclusa.
 Discorso analogo per il comando /autobid.
@@ -33,7 +33,7 @@ NOTA3: Un'offerta (o un rilancio) può anche essere presentata utilizzando ilxx
 comando /autobid, come spiegato in /info_autobid.
 
 
-2) /conferma_offerta: non ha bisogno di spiegazioni
+2) /confermo_offerta: non ha bisogno di spiegazioni
 
 
 3) /riepilogo: mostra le aste in corso e quelle concluse
@@ -53,15 +53,16 @@ Se ad esempio dovessi pagare i 20 di Petagna con Schick + 5 milioni:
 
           /pago petagna, schick, 5
 
-Vale lo stesso discorso di prima sull'importanza della virgola e sui nomi deixx
-calciatori.
+NOTA1: Vale lo stesso discorso di prima sull'importanza della virgola.
+
+NOTA2: Il primo nome DEVE essere il giocatore acquistato, per tutto il restoxx
+l'ordine non ha imposrtanza.
 
 
-6) /conferma_pagamento: non ha bisogno di spiegazioni
+6) /confermo_pagamento: non ha bisogno di spiegazioni
 
 
                     <b>AUTOBID</b>
-
 
 7) /autobid: Utilizzato per impostare il valore massimo del rilancioxx
 automatico. L'autobid deve contenere il valore numerico e il nome delxx
@@ -71,28 +72,31 @@ calciatore in questione. L'ordine NON è importante. Esempio:
           /autobid petagna, 20
 
 
-8) /conferma_autobid: non ha bisogno di spiegazioni
+8) /confermo_autobid: non ha bisogno di spiegazioni
 
 
-9) /elimina_autobid: Utilizzato per eliminare un autobid precedentementexx
+9) /elimino_autobid: Utilizzato per eliminare un autobid precedentementexx
 impostato. Il comando DEVE avere la forma:
 
-          /elimina_autobid calciatore
+          /elimino_autobid calciatore
 
 
-10) /riepilogo_autobid: Utilizzato per controllare tutti i propri autobidxx
+10) /confermo_eliminazione: non ha bisogno di spiegazioni
+
+
+11) /riepilogo_autobid: Utilizzato per controllare tutti i propri autobidxx
 ancora attivi
 
 
-11) /info_autobid: Spiegazione del funzionamento dell'autobid
+12) /info_autobid: Spiegazione del funzionamento dell'autobid
 
 
                     <b>EXTRA</b>
 
-12) /rosa: mostra la rosa aggiornata di colui che invia il comando
+13) /rosa: mostra la rosa aggiornata di colui che invia il comando
 
 
-13) /prezzo: mostra il prezzo del giocatore richiesto e la fantasquadra dixx
+14) /prezzo: mostra il prezzo del giocatore richiesto e la fantasquadra dixx
 appartenenza (o lo status di svincolato). Il comando DEVE avere la forma:
 
           /prezzo calciatore, squadra

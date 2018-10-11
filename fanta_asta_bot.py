@@ -288,7 +288,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 
 				private = ('Hai dovuto utilizzare tutto il tuo autobid. ' +
 				           'Reimposta un valore più alto nel caso volessi ' +
-				           'continuare ad usarlo.')
+				           'continuare ad usarlo.' + separ +
+				           crea_riepilogo_autobid(user))
 			else:
 				dbf.db_update(
 						table='autobids',
@@ -297,7 +298,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 						where='autobid_id = {}'.format(new_id))
 
 				private = ('Offerta aggiornata ed autobid impostato ' +
-				           'correttamente.')
+				           'correttamente.' + separ +
+				           crea_riepilogo_autobid(user))
 
 			group = ('<i>{}</i> rilancia per <b>{}</b>.'.format(user, player) +
 			         separ + crea_riepilogo(dt))
@@ -314,7 +316,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 					values=['Confirmed'],
 					where='autobid_id = {}'.format(new_id))
 
-			return 'Autobid impostato correttamente.', None
+			return ('Autobid impostato correttamente.' + separ +
+				    crea_riepilogo_autobid(user)), None
 
 		# Se c'è già un autobid si aprono altri possibili casi
 		else:
@@ -361,7 +364,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 
 					private = ('Hai dovuto utilizzare tutto il tuo autobid. ' +
 					           'Reimposta un valore più alto nel caso ' +
-					           'volessi continuare ad usarlo.')
+					           'volessi continuare ad usarlo.' + separ +
+					           crea_riepilogo_autobid(user))
 				else:
 					dbf.db_update(
 							table='autobids',
@@ -370,7 +374,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 							where='autobid_id = {}'.format(new_id))
 
 					private = ('Offerta aggiornata ed autobid impostato ' +
-					           'correttamente.')
+					           'correttamente.' + separ +
+					           crea_riepilogo_autobid(user))
 
 				group = ('<i>{}</i> rilancia '.format(user) +
 						 'per <b>{}</b>.'.format(player) + separ +
@@ -396,7 +401,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 						where='autobid_id = {}'.format(new_id))
 
 				return ('Hai aumentato il tuo autobid per {} '.format(player) +
-				        'da {} a {}.'.format(old_ab, new_ab)), None
+				        'da {} a {}.'.format(old_ab, new_ab) + separ +
+				        crea_riepilogo_autobid(user)), None
 
 			# Caso 5: il nuovo autobid non supera il vecchio ed il detentore
 			# dell'offerta è un avversario. Il nuovo autobid non viene
@@ -446,7 +452,8 @@ def check_autobid_value(user, player, new_id, new_ab):
 						where='autobid_id = {}'.format(new_id))
 
 				return ('Hai diminuito il tuo autobid per {} '.format(player) +
-				        'da {} a {}.'.format(old_ab, new_ab)), None
+				        'da {} a {}.'.format(old_ab, new_ab) + separ +
+				        crea_riepilogo_autobid(user)), None
 
 			# Caso 7: il nuovo autobid è uguale al vecchio ed il detentore
 			# dell'offerta è un avversario. Viene convalidato quello del
@@ -714,7 +721,7 @@ def check_pago_format(args):
 	return args[0], args[1:]
 
 
-def conferma_autobid(bot, update):
+def confermo_autobid(bot, update):
 
 	"""
 	Confronta il valore impostato con quello dell'ultima offerta valida. Se
@@ -756,7 +763,46 @@ def conferma_autobid(bot, update):
 		bot.send_message(parse_mode='HTML', chat_id=group_id, text=group)
 
 
-def conferma_offerta(bot, update):
+def confermo_eliminazione(bot, update):
+
+	"""
+	Elimina definitivamente dal db l'autobid scelto.
+	Utilizzata all'ainterno di elimino_autobid().
+
+	:param bot:
+	:param update:
+
+	:return: messaggio in chat
+
+	"""
+
+	chat_id = update.message.chat_id
+	if chat_id == fanta_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
+	user = select_user(update)
+
+	ab_to_delete = dbf.db_select(
+			table='elimina',
+			columns_in=['elimina_ab'],
+			where='elimina_user = "{}"'.format(user))
+	if not ab_to_delete:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Non hai autobid da eliminare.')
+
+	dbf.db_delete(table='autobids',
+	              where='autobid_id = {}'.format(ab_to_delete[0]))
+
+	dbf.db_delete(table='elimina',
+	              where='elimina_ab = {}'.format(ab_to_delete[0]))
+
+	message = 'Autobid eliminato' + separ + crea_riepilogo_autobid(user)
+
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
+
+
+def confermo_offerta(bot, update):
 
 	"""
 	Conferma l'offerta effettuata (se valida) ed aggiorna il db di conseguenza.
@@ -827,7 +873,7 @@ def conferma_offerta(bot, update):
 		return bot.send_message(parse_mode='HTML', chat_id=group_id, text=grp)
 
 
-def conferma_pagamento(bot, update):
+def confermo_pagamento(bot, update):
 
 	"""
 	Conferma il pagamento di un'offerta ufficiale ed aggiorna il db di
@@ -1029,6 +1075,70 @@ def crea_riepilogo_autobid(user):
 		message += '\t\t\t\t<b>{}</b>: {}\n'.format(pl, decr_ab)
 
 	return message
+
+
+def elimino_autobid(bot, update, args):
+
+	"""
+	Inserisce nella tabella "elimina" del db l'autobid da cancellare.
+	Richiede conferma.
+
+	:param bot:
+	:param update:
+	:param args: list, input dell'user
+
+	:return: messaggio in chat
+
+	"""
+
+	chat_id = update.message.chat_id
+	if update.message.chat_id == fanta_id:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Utilizza la chat privata')
+
+	user = select_user(update)
+
+	# Elimino tutte le proposte di cancellazione non confermate dall'user
+	dbf.db_delete(
+			table='elimina',
+			where='elimina_user = "{}"'.format(user))
+
+	# Seleziono tutti gli autobids dell'user
+	autobids = dbf.db_select(
+			table='autobids',
+			columns_in=['autobid_player'],
+			where='autobid_user = "{}"'.format(user))
+	if not autobids:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Non hai autobid impostati.')
+
+	# Controllo che il comando sia inviato correttamente
+	pl = ''.join(args).split(',')
+	if not pl[0] or len(pl) != 1:
+		return bot.send_message(chat_id=chat_id,
+		                        text=('Formato errato. ' +
+		                              'Es: /elimina_autobid petagna'))
+
+	jpl = ef.jaccard_result(pl[0], autobids, 3)
+	if not jpl:
+		return bot.send_message(chat_id=chat_id,
+		                        text='Giocatore non riconosciuto.')
+
+	ab = dbf.db_select(
+			table='autobids',
+			columns_in=['autobid_id'],
+			where=('autobid_user = "{}" AND '.format(user) +
+			       'autobid_player = "{}"'.format(jpl)))[0]
+
+	dbf.db_insert(
+			table='elimina',
+			columns=['elimina_ab', 'elimina_user'],
+			values=[ab, user])
+
+	message = ("Stai eliminando l'autobid per <b>{}</b>:".format(jpl) +
+	           "\n\n\t\t\t\t/conferma_eliminazione")
+
+	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
 def info(bot, update):
@@ -1492,9 +1602,13 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 				values=['Confirmed'],
 				where='autobid_id = {}'.format(ab_id))
 
-		return None, ('<i>{}</i> offre per <b>{}</b>'.format(user,
-		                                                     player_name) +
-		              separ + crea_riepilogo(dt))
+		private = ('Autobid impostato ed offerta a prezzo base ' +
+		           'ufficializzata.' + separ + crea_riepilogo_autobid(user))
+
+		group = ('<i>{}</i> offre per <b>{}</b>'.format(user, player_name) +
+		         separ + crea_riepilogo(dt))
+
+		return private, group
 
 	else:
 		dbf.db_delete(
@@ -1678,10 +1792,14 @@ def ufficiali(bot, update):
 
 
 autobid_handler = CommandHandler('autobid', autobid, pass_args=True)
-conferma_autobid_handler = CommandHandler('conferma_autobid', conferma_autobid)
-conferma_offerta_handler = CommandHandler('conferma_offerta', conferma_offerta)
-conferma_pagamento_handler = CommandHandler('conferma_pagamento',
-                                            conferma_pagamento)
+confermo_autobid_handler = CommandHandler('confermo_autobid', confermo_autobid)
+confermo_eliminazione_handler = CommandHandler('confermo_eliminazione',
+                                               confermo_eliminazione)
+confermo_offerta_handler = CommandHandler('confermo_offerta', confermo_offerta)
+confermo_pagamento_handler = CommandHandler('confermo_pagamento',
+                                            confermo_pagamento)
+elimino_autobid_handler = CommandHandler('elimino_autobid', elimino_autobid,
+                                         pass_args=True)
 info_handler = CommandHandler('info', info)
 info_autobid_handler = CommandHandler('info_autobid', info_autobid)
 offro_handler = CommandHandler('offro', offro, pass_args=True)
@@ -1694,9 +1812,11 @@ rosa_handler = CommandHandler('rosa', print_rosa)
 ufficiali_handler = CommandHandler('ufficiali', ufficiali)
 
 dispatcher.add_handler(autobid_handler)
-dispatcher.add_handler(conferma_autobid_handler)
-dispatcher.add_handler(conferma_offerta_handler)
-dispatcher.add_handler(conferma_pagamento_handler)
+dispatcher.add_handler(confermo_autobid_handler)
+dispatcher.add_handler(confermo_eliminazione_handler)
+dispatcher.add_handler(confermo_offerta_handler)
+dispatcher.add_handler(confermo_pagamento_handler)
+dispatcher.add_handler(elimino_autobid_handler)
 dispatcher.add_handler(info_handler)
 dispatcher.add_handler(info_autobid_handler)
 dispatcher.add_handler(offro_handler)
