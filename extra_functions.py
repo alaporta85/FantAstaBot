@@ -5,6 +5,8 @@ from pandas import ExcelWriter
 from nltk.metrics.distance import jaccard_distance
 from nltk.util import ngrams
 
+anno = '2018-2019'
+
 
 def aggiorna_db_con_nuove_quotazioni():
 
@@ -33,7 +35,7 @@ def aggiorna_db_con_nuove_quotazioni():
 			dbf.db_update(
 					table='players',
 					columns=['player_team', 'player_price'],
-					values=[team[:3].upper(), price],
+					values=[team[:3].upper(), int(price)],
 					where='player_name = "{}"'.format(pl))
 		else:
 			dbf.db_insert(
@@ -54,7 +56,7 @@ def aggiorna_status_calciatori():
 
 	"""
 
-	asta = pd.read_excel(os.getcwd() + '/Asta2018.xlsx',
+	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
 	                     sheet_name="Foglio1-1", usecols=range(0, 24, 3))
 
 	for team in asta.columns:
@@ -80,7 +82,7 @@ def correggi_file_asta():
 
 	"""
 
-	asta = pd.read_excel(os.getcwd() + '/Asta2018.xlsx',
+	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
 	                     header=0, sheet_name="Foglio1")
 	players = dbf.db_select(
 			table='players',
@@ -96,9 +98,8 @@ def correggi_file_asta():
 			correct_pl = jaccard_result(pl, names, 3)
 			asta.loc[j, [asta.columns[i],
 			             asta.columns[i+1]]] = correct_pl, tm.upper()
-		pass
 
-	writer = ExcelWriter('Asta2018_2.xlsx', engine='openpyxl')
+	writer = ExcelWriter('Asta{}_2.xlsx'.format(anno), engine='openpyxl')
 	asta.to_excel(writer, sheet_name='Foglio1')
 	writer.save()
 	writer.close()
@@ -173,30 +174,34 @@ def quotazioni_iniziali():
 
 
 # 2) Ad asta conclusa, salvare il file con tutte le rose all'interno della
-#    cartella del bot con il nome "Asta2018.xlsx". Aggiornare inoltre il db con
-#    i corretti nomi delle 8 squadre partecipanti ed accertarsi siano uguali a
-#    quelli presenti nel file "Asta2018.xlsx". Aggiornare anche i budgets
-#    post-asta di ciascuna squadra all'interno del db.
+#    cartella del bot con il nome "Asta2018-2019.xlsx". Aggiornare inoltre il
+#    db con i corretti nomi delle 8 squadre partecipanti ed accertarsi siano
+#    uguali a quelli presenti nel file "Asta2018-2019.xlsx". Aggiornare anche i
+#    budgets post-asta di ciascuna squadra all'interno del db.
 
 
 # 3) Lanciare le funzioni:
+
 # quotazioni_iniziali()
 # correggi_file_asta()
 
 
 # 4) A questo punto nella cartella ci sarà un nuovo file chiamato
-#    "Asta2018_2.xlsx". Copiare la tabella in esso contenuta ed incollarla in
-#    un secondo Foglio di calcolo appositamente creato nel file originale
-#    "Asta2018.xlsx". Il nuovo Foglio di calcolo dovrà chiamarsi "Foglio1-1".
+#    "Asta2018-2019_2.xlsx". Copiare la tabella in esso contenuta ed incollarla
+#    in un secondo Foglio di calcolo appositamente creato nel file originale
+#    "Asta2018-2019.xlsx". Il nuovo Foglio di calcolo dovrà chiamarsi
+#    "Foglio1-1".
 
 
 # 5) Lanciare la funzione:
+
 # aggiorna_status_calciatori()
 
 
 # 6) Prima di ogni mercato, scaricare il nuovo Excel con le quotazioni
 #    aggiornate, salvarlo con il nome relativo al mercato in questione (Esempio
 #    "Quotazioni_PrimoMercato.xlsx") e lanciare la funzione:
+
 # aggiorna_db_con_nuove_quotazioni()
 
 

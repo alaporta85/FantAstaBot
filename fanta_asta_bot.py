@@ -9,7 +9,7 @@ f = open('token.txt', 'r')
 updater = Updater(token=f.readline())
 f.close()
 dispatcher = updater.dispatcher
-BLOCK = True
+BLOCK = False
 fanta_id = -318148079
 polps_id = 67507055
 
@@ -21,7 +21,7 @@ def aggiorna_offerte_chiuse(dt_now, return_offers=False):
 	"""
 	Confronta i tempi trascorsi da ogni offerta e chiude quelle che hanno già
 	raggiunto o superato le 24 ore necessarie.
-	Utilizzata all'interno di conferma_autobid(), conferma_offerta(),
+	Utilizzata all'interno di confermo_autobid(), confermo_offerta(),
 	crea_riepilogo(), offro() e pago().
 
 	:param dt_now: datetime, data e ora attuale
@@ -131,7 +131,7 @@ def autobid(bot, update, args):
 			values=[user, jpl, nonce, tag, value])
 
 	message = ('\t\t\t\t<b>{}</b>  <i>{}  {}</i>'.format(jpl, tm, rl) +
-	           '\n\nAutobid: {}\n\n\t\t\t\t/conferma_autobid'.format(ab))
+	           '\n\nAutobid: {}\n\n\t\t\t\t/confermo_autobid'.format(ab))
 
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id,
 	                        text=message)
@@ -551,7 +551,7 @@ def check_offer_value(user, offer_id, player, dt):
 		- In caso di rilancio, se l'offerta supera quella già presente
 		- Nel caso la superi, se l'offerta supera un possibile autobid
 
-	Utilizzata all'interno di conferma_offerta().
+	Utilizzata all'interno di confermo_offerta().
 
 	:param user: str, fantasquadra
 	:param offer_id: int, id dell'offerta
@@ -1026,7 +1026,7 @@ def crea_riepilogo(dt_now):
 		- Concluse ma non ufficializzate
 		- Ufficializzate
 
-	Utilizzata dentro conferma_offerta() e riepilogo().
+	Utilizzata dentro confermo_offerta() e riepilogo().
 
 	:param dt_now: str, data e ora da trasformare in datetime
 
@@ -1136,7 +1136,7 @@ def elimino_autobid(bot, update, args):
 			values=[ab, user])
 
 	message = ("Stai eliminando l'autobid per <b>{}</b>:".format(jpl) +
-	           "\n\n\t\t\t\t/conferma_eliminazione")
+	           "\n\n\t\t\t\t/confermo_eliminazione")
 
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
@@ -1329,7 +1329,7 @@ def message_with_payment(user, acquisto, pagamento):
 	if money:
 		message += '\n\t\t- <b>{}</b>'.format(money)
 
-	return money_db, message + '\n\n/conferma_pagamento'
+	return money_db, message + '\n\n/confermo_pagamento'
 
 
 def non_svincolato(player):
@@ -1413,7 +1413,7 @@ def offro(bot, update, args):
 							text='Offri <b>{}</b> per:\n\n\t\t'.format(offer) +
 							     '<b>{}   ({})   {}</b>'.format(pl, team,
 							                                    roles) +
-							'\n\n/conferma_offerta')
+							'\n\n/confermo_offerta')
 
 
 def order_by_role(user):
@@ -1558,10 +1558,10 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 
 	"""
 	Presenta un'offerta a prezzo base o comunica la mancanza di un'asta attiva.
-	Utilizzata all'interno di conferma_autobid(). L'oggetto del return può
+	Utilizzata all'interno di confermo_autobid(). L'oggetto del return può
 	essere un tuple o una str in modo da distinguere il messaggio da inviare
 	in chat privata e quello da inviare nel gruppo ufficiale.
-	Utilizzata all'interno di conferma_autobid().
+	Utilizzata all'interno di confermo_autobid().
 
 	:param user: str, fantasquadra
 	:param ab_id: int, id dell'autobid
@@ -1709,7 +1709,7 @@ def select_offer_to_confirm(user):
 	Seleziona l'offerta che l'utente deve confermare, se corretta.
 	Ritorna un messaggio esplicativo in caso di assenza di offerte da
 	confermare.
-	Utilizzata all'interno di conferma_offerta().
+	Utilizzata all'interno di confermo_offerta().
 
 	:param user: str, squadra di uno dei partecipanti
 
