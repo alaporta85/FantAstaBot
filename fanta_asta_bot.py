@@ -13,7 +13,7 @@ BLOCK = False
 fanta_id = -318148079
 polps_id = 67507055
 
-separ = '\n\n' + '_' * 30 + '\n\n\n'
+separ = '\n\n' + '_' * 28 + '\n\n\n'
 
 
 def aggiorna_offerte_chiuse(dt_now, return_offers=False):
@@ -995,26 +995,23 @@ def confermo_pagamento(bot, update):
 
 	message = ('<i>{}</i> ha ufficializzato '.format(user) +
 	           '<b>{}</b> a {}.'.format(pl, pr) +
-	           '\nPagamento: {}\n'.format(', '.join(mn)) +
-	           'Il budget passa da {} a {}.'.format(budget, new_budget - pr))
+	           '\nPagamento: {}\n'.format(', '.join(mn)))
+
+	if budget == new_budget - pr:
+		message += 'Il budget resta {}'.format(budget)
+	else:
+		message += 'Il budget passa da {} a {}.'.format(budget,
+		                                                new_budget - pr)
 
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+	bot.send_message(chat_id=chat_id,
+	                 text='Pagamento effettuato correttamente.')
 
 	bot.send_message(parse_mode='HTML', chat_id=group_id,
 	                 text=(message + separ + crea_riepilogo(dt)))
 
-	# mn2 = []
-	# for i in mn:
-	# 	try:
-	# 		int(i)
-	# 	except ValueError:
-	# 		mn2.append(i)
-	#
-	# browser = sf.login()
-	# if mn2:
-	# 	cessioni = [el.split(' (')[0] for el in mn2]
-	# 	sf.aggiorna_cessioni(browser, user, cessioni)
-	# sf.aggiorna_acquisti(browser, user, (pl, pr))
+	# sf.aggiorna_rosa_online(user, (pl, pr), mn)
 
 
 def crea_riepilogo(dt_now):

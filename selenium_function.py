@@ -13,15 +13,15 @@ logger = log.set_logging()
 trials = 3
 
 
-def aggiorna_acquisti(brow, fantasquadra, acquisti):
+def aggiorna_acquisto(brow, fantasquadra, acquisto):
 
 	"""
 	Aggiorna gli acquisti ufficiali subito dopo il pagamento tramite bot.
-	Utilizzata all'interno di confermo_pagamento().
+	Utilizzata all'interno di aggiorna_rosa_online().
 
 	:param brow: browser
 	:param fantasquadra: str
-	:param acquisti: tuple, (calciatore, prezzo)
+	:param acquisto: tuple, (KHEDIRA, 26)
 
 	:return: nulla
 
@@ -41,15 +41,16 @@ def aggiorna_acquisti(brow, fantasquadra, acquisti):
 		try:
 			wait_visible(brow, WAIT, pl_box_path)
 			pl_box = brow.find_element_by_xpath(pl_box_path)
-			pl_box.send_keys(acquisti[0])
+			pl_box.send_keys(acquisto[0])
+			time.sleep(1)
 			break
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il nome ' +
-				            'del calciatore non trovato.' +
+				            'del calciatore non trovato. ' +
 				            'Tentativo: {}'.format(i + 1))
 				brow.refresh()
-				return aggiorna_acquisti(brow, fantasquadra, acquisti)
+				return aggiorna_acquisto(brow, fantasquadra, acquisto)
 			else:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il nome ' +
 				            'del calciatore non trovato. Chiudo il browser.')
@@ -69,15 +70,15 @@ def aggiorna_acquisti(brow, fantasquadra, acquisti):
 			wait_visible(brow, WAIT, pr_path)
 			pr_box = brow.find_element_by_xpath(pr_path)
 			pr_box.clear()
-			pr_box.send_keys(acquisti[1])
+			pr_box.send_keys(acquisto[1])
 			break
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il prezzo ' +
-				            'del calciatore non trovato.' +
+				            'del calciatore non trovato. ' +
 				            'Tentativo: {}'.format(i + 1))
 				brow.refresh()
-				return aggiorna_acquisti(brow, fantasquadra, acquisti)
+				return aggiorna_acquisto(brow, fantasquadra, acquisto)
 			else:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il prezzo ' +
 				            'del calciatore non trovato. Chiudo il browser.')
@@ -98,13 +99,13 @@ def aggiorna_acquisti(brow, fantasquadra, acquisti):
 				logger.info('AGGIORNA_ACQUISTI - Tasto "COMPLETA ACQUISTO" ' +
 				            'non trovato. Tentativo {}'.format(i + 1))
 				brow.refresh()
-				return aggiorna_acquisti(brow, fantasquadra, acquisti)
+				return aggiorna_acquisto(brow, fantasquadra, acquisto)
 			else:
 				logger.info('AGGIORNA_ACQUISTI - Tasto "COMPLETA ACQUISTO" ' +
 				            'non trovato. Chiudo il browser.')
 				brow.close()
 
-	logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisti[0]) +
+	logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisto[0]) +
 	            'da parte di {} effettuato correttamente'.format(fantasquadra))
 
 	brow.close()
@@ -114,11 +115,11 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 
 	"""
 	Aggiorna le cessioni ufficiali subito dopo il pagamento tramite bot.
-	Utilizzata all'interno di confermo_pagamento().
+	Utilizzata all'interno di aggiorna_rosa_online().
 
 	:param brow: browser
 	:param fantasquadra: str
-	:param cessioni: list, [calciatore1, calciatore2, ....]
+	:param cessioni: list, [IMMOBILE, VERDI, ....]
 
 	:return: nulla
 
@@ -139,12 +140,12 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 			break
 		except TimeoutException:
 			if i < trials:
-				logger.info('AGGIORNA_CESSIONI - Rosa non trovata.' +
+				logger.info('AGGIORNA_CESSIONI - Rosa non trovata. ' +
 				            'Tentativo: {}'.format(i + 1))
 				brow.refresh()
 				return aggiorna_cessioni(brow, fantasquadra, cessioni)
 			else:
-				logger.info('AGGIORNA_CESSIONI - Rosa non trovata.' +
+				logger.info('AGGIORNA_CESSIONI - Rosa non trovata. ' +
 				            'Chiudo il browser.')
 				brow.close()
 
@@ -154,9 +155,11 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 	# Scorro tutta la rosa e spunto solo i calciatori da cedere
 	for pl in pls:
 		scroll_to_element(brow, 'false', pl)
-		name = pl.find_element_by_xpath('.//td[@data-key="name"]').text
-		if name.upper() in cessioni:
+		name = pl.find_element_by_xpath('.//td[@data-key="name"]').text.upper()
+		if name in cessioni:
 			pl.find_element_by_xpath('.//span[@class="check"]').click()
+			logger.info('AGGIORNA_CESSIONI - {} aggiunto alla '.format(name) +
+			            'lista cessioni.')
 
 	# Clicca il tasto 'PROCEDI'
 	brow.find_element_by_xpath('.//a[@class="finalizing-hidden cart"]').click()
@@ -168,6 +171,10 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 			wait_clickable(brow, WAIT, release)
 			time.sleep(2)
 			brow.find_element_by_xpath(release).click()
+			logger.info('AGGIORNA_CESSIONI - ' +
+			            'Cessioni di {} '.format(', '.join(cessioni)) +
+			            'da parte di {} effettuate correttamente'.format(
+				        fantasquadra))
 			time.sleep(2)
 			break
 		except TimeoutException:
@@ -181,9 +188,38 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 				            'non trovato. Chiudo il browser.')
 				brow.close()
 
-	logger.info('AGGIORNA_CESSIONI - ' +
-	            'Cessioni di {} '.format(', '.join(cessioni)) +
-	            'da parte di {} effettuate correttamente'.format(fantasquadra))
+
+def aggiorna_rosa_online(fantasquadra, acquisto, cessioni):
+
+	"""
+	Aggiorna la rosa sul sito di Fantagazzetta subito dopo il pagamento tramite
+	bot.
+	Utilizzata all'interno di conferma_pagamento().
+
+	:param fantasquadra: str
+	:param acquisto: tuple, (KHEDIRA, 26)
+	:param cessioni: list, [IMMOBILE (LAZ: 33), VERDI (NAP: 19), ....]
+
+	:return: nulla
+
+	"""
+
+	# Separo i calciatori dai milioni cash e ne prendo solo il nome
+	calciatori = []
+	for i in cessioni:
+		try:
+			int(i)
+		except ValueError:
+			calciatori.append(i.split(' (')[0])
+
+	pl, pr = acquisto
+	logger.info('AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa ' +
+	            'per {}. Acquisto: {}, {}. Cessioni: {}'.format(
+			            fantasquadra, pl, pr, calciatori))
+	browser = login()
+	if calciatori:
+		aggiorna_cessioni(browser, fantasquadra, calciatori)
+	aggiorna_acquisto(browser, fantasquadra, acquisto)
 
 
 def chiudi_popup(brow):
@@ -239,12 +275,12 @@ def login():
 			break
 		except TimeoutException:
 			if i < trials:
-				logger.info('LOGIN - Tasto "ACCEDI" non trovato.' +
+				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
 				            'Tentativo {}'.format(i + 1))
 				brow.close()
 				return login()
 			else:
-				logger.info('LOGIN - Tasto "ACCEDI" non trovato.' +
+				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
 				            'Chiudo il browser.')
 				brow.close()
 
@@ -264,37 +300,51 @@ def login():
 			break
 		except TimeoutException:
 			if i < trials:
-				logger.info('LOGIN - Box per username non trovato.' +
+				logger.info('LOGIN - Box per username non trovato. ' +
 				            'Tentativo {}'.format(i + 1))
 				brow.close()
 				return login()
 			else:
-				logger.info('LOGIN - Box per username non trovato.' +
+				logger.info('LOGIN - Box per username non trovato. ' +
 				            'Chiudo il browser.')
 				brow.close()
 
+	# Inserisco la password
 	pass_path = './/input[@name="password"]'
-	accedi_path = './/button[@id="buttonLogin"]'
-	wait_visible(brow, WAIT, pass_path)
-	passw = brow.find_element_by_xpath(pass_path)
-
-	passw.send_keys(password)
-	wait_clickable(brow, WAIT, accedi_path)
-	accedi = brow.find_element_by_xpath(accedi_path)
-	accedi.click()
-
-	lega = './/span[@class="league-name"]'
-
 	for i in range(trials):
 		try:
-			wait_clickable(brow, WAIT, lega)
+			wait_visible(brow, WAIT, pass_path)
+			passw = brow.find_element_by_xpath(pass_path)
+			passw.send_keys(password)
 			break
 		except TimeoutException:
 			if i < trials:
-				brow.refresh()
-				login()
+				logger.info('LOGIN - Box per password non trovato. ' +
+				            'Tentativo {}'.format(i + 1))
+				brow.close()
+				return login()
 			else:
-				logger.info('LOGIN - "Fantascandalo" button not found')
+				logger.info('LOGIN - Box per password non trovato. ' +
+				            'Chiudo il browser.')
+				brow.close()
+
+	# Clicco il tasto ACCEDI
+	accedi_path = './/button[@id="buttonLogin"]'
+	for i in range(trials):
+		try:
+			wait_clickable(brow, WAIT, accedi_path)
+			accedi = brow.find_element_by_xpath(accedi_path)
+			accedi.click()
+			break
+		except TimeoutException:
+			if i < trials:
+				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
+				            'Tentativo {}'.format(i + 1))
+				brow.close()
+				return login()
+			else:
+				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
+				            'Chiudo il browser.')
 				brow.close()
 
 	return brow
@@ -306,6 +356,13 @@ def scroll_to_element(brow, true_false, element):
 	If the argument of 'scrollIntoView' is 'true' the command scrolls
 	the webpage positioning the element at the top of the window, if it
 	is 'false' the element will be positioned at the bottom.
+
+	:param brow:
+	:param true_false: str, 'true' or 'false'
+	:param element: HTML element
+
+	:return: Nothing
+
 	"""
 
 	brow.execute_script('return arguments[0].scrollIntoView({});'
@@ -314,27 +371,44 @@ def scroll_to_element(brow, true_false, element):
 
 def select_team(brow, fantasquadra):
 
-	# Facendo il login con le nostre credenziali la nostra squadra è
-	# selezionata di default. Passando 'Ciolle United' al codice sottostante si
-	# produrrebbe un errore in quanto l'elemento associato non è cliccabile.
+	"""
+	Se la fantasquadra in questione NON è Ciolle United, la seleziona nel menù
+	della lega per aggiornarne la rosa.
+
+	:param brow:
+	:param fantasquadra: str
+
+	:return: nulla
+
+	"""
+
+	# Facendo il login con le credenziali delle Ciolle, la fantasquadra
+	# Ciolle United è selezionata di default. Passando 'Ciolle United' al
+	# codice sottostante si produrrebbe un errore in quanto l'elemento
+	# associato non è cliccabile.
 	if fantasquadra != 'Ciolle United':
 
+		# Clicco il tasto per aprire la lista delle fantasquadre
 		arrow = './/a[@href="#teamsDropdown"]'
-
 		for i in range(trials):
 			try:
 				wait_clickable(brow, WAIT, arrow)
+				brow.find_element_by_xpath(arrow).click()
+				time.sleep(2)
 				break
 			except TimeoutException:
 				if i < trials:
+					logger.info('SELECT_TEAM - Tasto per aprire il menù a ' +
+					            'tendina non trovato. ' +
+					            'Tentativo: {}'.format(i + 1))
 					brow.refresh()
-					select_team(brow, fantasquadra)
+					return select_team(brow, fantasquadra)
 				else:
-					logger.info('SELECT_TEAM - Arrow button not found')
+					logger.info('SELECT_TEAM - Tasto per aprire il menù a ' +
+					            'tendina non trovato. Chiudo il browser.')
 					brow.close()
 
-		brow.find_element_by_xpath(arrow).click()
-
+		# Clicco la fantasquadra corretta
 		teams = brow.find_elements_by_xpath(
 				'.//ul[@class="competition-list"]//a')
 		for team in teams:
@@ -349,6 +423,13 @@ def wait_clickable(brow, seconds, element):
 	"""
 	Forces the script to wait for the element to be clickable before doing
 	any other action.
+
+	:param brow:
+	:param seconds: int, maximum wait before returning a TimeoutException
+	:param element: str, xpath of the element
+
+	:return: nothing
+
 	"""
 
 	WebDriverWait(
@@ -361,11 +442,15 @@ def wait_visible(brow, seconds, element):
 	"""
 	Forces the script to wait for the element to be visible before doing
 	any other action.
+
+	:param brow:
+	:param seconds: int, maximum wait before returning a TimeoutException
+	:param element: str, xpath of the element
+
+	:return: nothing
+
 	"""
 
 	WebDriverWait(
 			brow, seconds).until(EC.visibility_of_element_located(
 					(By.XPATH, element)))
-
-
-login()
