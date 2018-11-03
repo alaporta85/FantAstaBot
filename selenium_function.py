@@ -85,13 +85,12 @@ def aggiorna_acquisto(brow, fantasquadra, acquisto):
 				brow.close()
 
 	# Clicca il tasto 'COMPLETA ACQUISTO'
-	compl_acq = './/button[@onclick="releasePlayers()"]'
+	compl_acq = './/button[@onclick="buyPlayers()"]'
 	for i in range(trials):
 		try:
 			wait_clickable(brow, WAIT, compl_acq)
 			time.sleep(2)
-			brow.find_element_by_xpath(
-				'.//button[@onclick="buyPlayers()"]').click()
+			brow.find_element_by_xpath(compl_acq).click()
 			time.sleep(2)
 			break
 		except TimeoutException:
@@ -215,7 +214,7 @@ def aggiorna_rosa_online(fantasquadra, acquisto, cessioni):
 	pl, pr = acquisto
 	logger.info('AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa ' +
 	            'per {}. Acquisto: {}, {}. Cessioni: {}'.format(
-			            fantasquadra, pl, pr, calciatori))
+			            fantasquadra, pl, pr, ', '.join(calciatori)))
 	browser = login()
 	if calciatori:
 		aggiorna_cessioni(browser, fantasquadra, calciatori)
@@ -344,6 +343,24 @@ def login():
 				return login()
 			else:
 				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
+				            'Chiudo il browser.')
+				brow.close()
+
+	# Aspetto che il tasto della lega sia cliccabile per essere sicuro che la
+	# pagina sia caricata completaamente
+	lega = './/span[@class="league-name"]'
+	for i in range(trials):
+		try:
+			wait_clickable(brow, WAIT, lega)
+			break
+		except TimeoutException:
+			if i < trials:
+				logger.info('LOGIN - Tasto "FANTASCANDALO" non trovato. ' +
+				            'Tentativo {}'.format(i + 1))
+				brow.refresh()
+				return login()
+			else:
+				logger.info('LOGIN - Tasto "FANTASCANDALO" non trovato. ' +
 				            'Chiudo il browser.')
 				brow.close()
 

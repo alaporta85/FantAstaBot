@@ -37,3 +37,49 @@
 2018-10-13 10:37:37,501 INFO: /INFO - Ciolle United
 2018-10-13 10:50:11,366 INFO: /INFO - FC STRESS
 2018-10-14 10:36:14,180 INFO: /INFO - Ciolle United
+2018-10-14 16:58:14,960 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: ABATE, 17. Cessioni: ['HATEBOER', 'LAXALT']
+2018-10-14 20:07:50,399 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: ABATE, 17. Cessioni: HATEBOER, LAXALT
+2018-10-14 20:09:30,842 INFO: AGGIORNA_CESSIONI - HATEBOER aggiunto alla lista cessioni.
+2018-10-14 20:09:31,594 INFO: AGGIORNA_CESSIONI - LAXALT aggiunto alla lista cessioni.
+2018-10-14 20:18:17,602 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: ABATE, 17. Cessioni: HATEBOER, LAXALT
+2018-10-14 20:18:34,884 INFO: AGGIORNA_CESSIONI - HATEBOER aggiunto alla lista cessioni.
+2018-10-14 20:18:35,581 INFO: AGGIORNA_CESSIONI - LAXALT aggiunto alla lista cessioni.
+2018-10-14 20:22:07,627 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: PADELLI
+2018-10-14 20:22:24,374 INFO: AGGIORNA_CESSIONI - PADELLI aggiunto alla lista cessioni.
+2018-10-14 20:22:27,946 INFO: AGGIORNA_CESSIONI - Cessioni di PADELLI da parte di Ciolle United effettuate correttamente
+2018-10-14 20:25:24,370 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: PADELLI, 1. Cessioni: SECULIN
+2018-10-14 20:25:43,939 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-10-14 20:25:47,692 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-10-14 20:32:28,541 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: PADELLI
+2018-10-14 20:33:04,074 INFO: AGGIORNA_CESSIONI - PADELLI aggiunto alla lista cessioni.
+2018-10-14 20:33:07,796 INFO: AGGIORNA_CESSIONI - Cessioni di PADELLI da parte di Ciolle United effettuate correttamente
+2018-10-14 20:35:24,433 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: PADELLI, 1. Cessioni: SECULIN
+2018-10-14 20:36:02,485 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-10-14 20:36:06,216 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-10-14 20:40:22,740 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: PADELLI
+2018-10-14 20:40:41,877 INFO: AGGIORNA_CESSIONI - PADELLI aggiunto alla lista cessioni.
+2018-10-14 20:40:45,507 INFO: AGGIORNA_CESSIONI - Cessioni di PADELLI da parte di Ciolle United effettuate correttamente
+2018-10-14 20:40:53,695 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-10-14 20:41:50,387 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: PADELLI, 1. Cessioni: SECULIN
+2018-10-14 20:45:19,186 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: PADELLI
+2018-10-14 20:45:36,136 INFO: AGGIORNA_CESSIONI - PADELLI aggiunto alla lista cessioni.
+2018-10-14 20:45:39,992 INFO: AGGIORNA_CESSIONI - Cessioni di PADELLI da parte di Ciolle United effettuate correttamente
+2018-10-14 20:45:48,869 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-10-14 20:47:16,344 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: PADELLI, 1. Cessioni: SECULIN
+2018-10-14 20:47:33,004 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-10-14 20:47:37,033 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-10-14 20:49:12,380 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: PADELLI
+2018-10-14 20:50:43,283 INFO: AGGIORNA_CESSIONI - PADELLI aggiunto alla lista cessioni.
+2018-10-14 20:50:47,227 INFO: AGGIORNA_CESSIONI - Cessioni di PADELLI da parte di Ciolle United effettuate correttamente
+2018-10-14 20:50:59,326 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-10-14 20:52:25,706 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: PADELLI, 1. Cessioni: SECULIN
+2018-10-14 20:52:43,793 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-10-14 20:52:47,815 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-10-14 20:52:58,648 INFO: AGGIORNA_ACQUISTI - Acquisto di PADELLI da parte di Ciolle United effettuato correttamente
+2018-10-17 16:33:20,488 INFO: /INFO - Ac Picchia
+2018-10-17 16:34:30,860 INFO: /INFO - Ac Picchia
+2018-10-17 17:03:51,730 INFO: /INFO - fcpastaboy
+2018-10-17 17:53:12,989 INFO: /INFO - Atletico cu tri Arancini
+2018-10-27 10:43:52,076 INFO: /INFO - Ciolle United
+2018-10-29 00:09:52,790 INFO: /INFO - Ac Picchia
+2018-11-03 18:58:45,399 INFO: /INFO - Ciolle United

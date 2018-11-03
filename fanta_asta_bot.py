@@ -12,6 +12,8 @@ dispatcher = updater.dispatcher
 BLOCK = False
 fanta_id = -318148079
 polps_id = 67507055
+time_window1 = 900
+time_window2 = 900
 
 separ = '\n\n' + '_' * 28 + '\n\n\n'
 
@@ -50,7 +52,7 @@ def aggiorna_offerte_chiuse(dt_now, return_offers=False):
 	for of_id, tm, pl, pr, dt in offers_win:
 		dt2 = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
 		diff = dt_now - dt2
-		if diff.days > 0:
+		if diff.total_seconds() > time_window1:
 			offers_no.append((of_id, tm, pl, pr, dt))
 			dbf.db_update(
 					table='offers',
@@ -124,6 +126,9 @@ def autobid(bot, update, args):
 	# Creo gli oggetti necessari per criptare il valore dell'autobid e li
 	# inserisco nel db
 	nonce, tag, value = dbf.encrypt_value(ab)
+	print(type(nonce))
+	print(type(tag))
+	print(type(value))
 	dbf.db_insert(
 			table='autobids',
 			columns=['autobid_user', 'autobid_player', 'autobid_nonce',
@@ -601,9 +606,8 @@ def check_offer_value(user, offer_id, player, dt):
 
 			private = 'Offerta aggiornata correttamente.'
 
-			group = ('<i>{}</i> ha offerto '.format(user) +
-			         'per <b>{}</b>.'.format(player) + separ +
-			         crea_riepilogo(dt))
+			group = ('<i>{}</i> offre per '.format(user) +
+			         '<b>{}</b>.'.format(player) + separ + crea_riepilogo(dt))
 
 			return private, group
 
@@ -1038,8 +1042,9 @@ def crea_riepilogo(dt_now):
 
 	offers_win, offers_no = aggiorna_offerte_chiuse(dt_now, return_offers=True)
 
-	message1 = message_with_offers(offers_win, 1, dt_now, message1)
-	message2 = message_with_offers(offers_no, 2, dt_now, message2)
+	message1 = message_with_offers(offers_win, time_window1, dt_now, message1)
+	message2 = message_with_offers(offers_no, time_window1 + time_window2,
+	                               dt_now, message2)
 
 	message = message1 + '\n\n\n\n' + message2
 
@@ -1206,7 +1211,7 @@ def message_with_offers(list_of_offers, shift, dt_now, msg):
 	Utilizzata dentro crea_riepilogo().
 
 	:param list_of_offers: list, ogni tuple è un'offerta
-	:param shift: int, per calcolare lo shift in giorni e il tempo rimanente
+	:param shift: int, per calcolare lo shift in secondi e il tempo rimanente
 	:param dt_now: datetime, data e ora attuali
 	:param msg: str, messaggio da completare
 
@@ -1219,10 +1224,15 @@ def message_with_offers(list_of_offers, shift, dt_now, msg):
 				table='players',
 				columns_in=['player_team', 'player_roles'],
 				where='player_name = "{}"'.format(pl))[0]
-		dt_plus = dt + timedelta(days=shift)
+		dt_plus = dt + timedelta(seconds=shift)
 		diff = (dt_plus - dt_now).total_seconds()
-		hh = int(diff // 3600)
-		mm = int((diff % 3600) // 60)
+		if diff < 0:
+			diff = abs(diff)
+			hh = - int(diff // 3600)
+			mm = - int((diff % 3600) // 60)
+		else:
+			hh = int(diff // 3600)
+			mm = int((diff % 3600) // 60)
 
 		msg += ('\n\t\t- <b>{}</b> ({}) {}:'.format(pl, team, roles) +
 		        ' {}, <i>{}</i>  '.format(pr, tm) +
