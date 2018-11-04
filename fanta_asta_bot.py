@@ -12,8 +12,8 @@ dispatcher = updater.dispatcher
 BLOCK = False
 fanta_id = -318148079
 polps_id = 67507055
-time_window1 = 900
-time_window2 = 900
+time_window1 = 1800
+time_window2 = 1800
 
 separ = '\n\n' + '_' * 28 + '\n\n\n'
 
