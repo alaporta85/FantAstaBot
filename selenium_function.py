@@ -1,6 +1,7 @@
 import os
 import time
 import log_functions as log
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -28,7 +29,7 @@ def aggiorna_acquisto(brow, fantasquadra, acquisto):
 	"""
 
 	url_acquisti = ('https://leghe.fantagazzetta.com/fantascandalo/' +
-	                'gestione-lega/acquista-calciatore')
+					'gestione-lega/acquista-calciatore')
 
 	brow.get(url_acquisti)
 
@@ -47,13 +48,13 @@ def aggiorna_acquisto(brow, fantasquadra, acquisto):
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il nome ' +
-				            'del calciatore non trovato. ' +
-				            'Tentativo: {}'.format(i + 1))
+							'del calciatore non trovato. ' +
+							'Tentativo: {}'.format(i + 1))
 				brow.refresh()
 				return aggiorna_acquisto(brow, fantasquadra, acquisto)
 			else:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il nome ' +
-				            'del calciatore non trovato. Chiudo il browser.')
+							'del calciatore non trovato. Chiudo il browser.')
 				brow.close()
 
 	# Inserisce il segno di spunta per confermare il calciatore selezionato
@@ -75,13 +76,13 @@ def aggiorna_acquisto(brow, fantasquadra, acquisto):
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il prezzo ' +
-				            'del calciatore non trovato. ' +
-				            'Tentativo: {}'.format(i + 1))
+							'del calciatore non trovato. ' +
+							'Tentativo: {}'.format(i + 1))
 				brow.refresh()
 				return aggiorna_acquisto(brow, fantasquadra, acquisto)
 			else:
 				logger.info('AGGIORNA_ACQUISTI - Box per inserire il prezzo ' +
-				            'del calciatore non trovato. Chiudo il browser.')
+							'del calciatore non trovato. Chiudo il browser.')
 				brow.close()
 
 	# Clicca il tasto 'COMPLETA ACQUISTO'
@@ -96,16 +97,16 @@ def aggiorna_acquisto(brow, fantasquadra, acquisto):
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_ACQUISTI - Tasto "COMPLETA ACQUISTO" ' +
-				            'non trovato. Tentativo {}'.format(i + 1))
+							'non trovato. Tentativo {}'.format(i + 1))
 				brow.refresh()
 				return aggiorna_acquisto(brow, fantasquadra, acquisto)
 			else:
 				logger.info('AGGIORNA_ACQUISTI - Tasto "COMPLETA ACQUISTO" ' +
-				            'non trovato. Chiudo il browser.')
+							'non trovato. Chiudo il browser.')
 				brow.close()
 
 	logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisto[0]) +
-	            'da parte di {} effettuato correttamente'.format(fantasquadra))
+				'da parte di {} effettuato correttamente'.format(fantasquadra))
 
 	brow.close()
 
@@ -125,7 +126,7 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 	"""
 
 	url_cessioni = ('https://leghe.fantagazzetta.com/fantascandalo/' +
-	                'gestione-lega/svincola-calciatore')
+					'gestione-lega/svincola-calciatore')
 
 	brow.get(url_cessioni)
 
@@ -140,12 +141,12 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_CESSIONI - Rosa non trovata. ' +
-				            'Tentativo: {}'.format(i + 1))
+							'Tentativo: {}'.format(i + 1))
 				brow.refresh()
 				return aggiorna_cessioni(brow, fantasquadra, cessioni)
 			else:
 				logger.info('AGGIORNA_CESSIONI - Rosa non trovata. ' +
-				            'Chiudo il browser.')
+							'Chiudo il browser.')
 				brow.close()
 
 	# Tutti i calciatori della rosa
@@ -158,7 +159,7 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 		if name in cessioni:
 			pl.find_element_by_xpath('.//span[@class="check"]').click()
 			logger.info('AGGIORNA_CESSIONI - {} aggiunto alla '.format(name) +
-			            'lista cessioni.')
+						'lista cessioni.')
 
 	# Clicca il tasto 'PROCEDI'
 	brow.find_element_by_xpath('.//a[@class="finalizing-hidden cart"]').click()
@@ -171,20 +172,20 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 			time.sleep(2)
 			brow.find_element_by_xpath(release).click()
 			logger.info('AGGIORNA_CESSIONI - ' +
-			            'Cessioni di {} '.format(', '.join(cessioni)) +
-			            'da parte di {} effettuate correttamente'.format(
-				        fantasquadra))
+						'Cessioni di {} '.format(', '.join(cessioni)) +
+						'da parte di {} effettuate correttamente'.format(
+						fantasquadra))
 			time.sleep(2)
 			break
 		except TimeoutException:
 			if i < trials:
 				logger.info('AGGIORNA_CESSIONI - Tasto "COMPLETA SVINCOLO" ' +
-				            'non trovato. Tentativo {}'.format(i + 1))
+							'non trovato. Tentativo {}'.format(i + 1))
 				brow.refresh()
 				return aggiorna_cessioni(brow, fantasquadra, cessioni)
 			else:
 				logger.info('AGGIORNA_CESSIONI - Tasto "COMPLETA SVINCOLO" ' +
-				            'non trovato. Chiudo il browser.')
+							'non trovato. Chiudo il browser.')
 				brow.close()
 
 
@@ -213,8 +214,8 @@ def aggiorna_rosa_online(fantasquadra, acquisto, cessioni):
 
 	pl, pr = acquisto
 	logger.info('AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa ' +
-	            'per {}. Acquisto: {}, {}. Cessioni: {}'.format(
-			            fantasquadra, pl, pr, ', '.join(calciatori)))
+				'per {}. Acquisto: {}, {}. Cessioni: {}'.format(
+						fantasquadra, pl, pr, ', '.join(calciatori)))
 	browser = login()
 	if calciatori:
 		aggiorna_cessioni(browser, fantasquadra, calciatori)
@@ -257,8 +258,14 @@ def login():
 
 	url_lega = 'https://leghe.fantagazzetta.com/fantascandalo/home'
 
-	brow = webdriver.Chrome(chrome_path)
-	time.sleep(3)
+	chop = webdriver.ChromeOptions()
+	chop.add_extension('AdBlock_v3.34.0.crx')
+	brow = webdriver.Chrome(chrome_path, chrome_options=chop)
+	time.sleep(30)
+
+	handles = list(brow.window_handles)
+	brow.close()
+	brow.switch_to.window(handles[0])
 
 	brow.get(url_lega)
 
@@ -266,7 +273,7 @@ def login():
 
 	# Clicca il tasto 'ACCEDI'
 	accedi = ('.//button[@class="hidden-logged btn btn-primary btn-sm ' +
-	          'btn-raised navbar-btn navbar-right mw-auto"]')
+			  'btn-raised navbar-btn navbar-right mw-auto"]')
 	for i in range(trials):
 		try:
 			wait_clickable(brow, WAIT, accedi)
@@ -275,12 +282,12 @@ def login():
 		except TimeoutException:
 			if i < trials:
 				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
-				            'Tentativo {}'.format(i + 1))
+							'Tentativo {}'.format(i + 1))
 				brow.close()
 				return login()
 			else:
 				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
-				            'Chiudo il browser.')
+							'Chiudo il browser.')
 				brow.close()
 
 	# Carica username e password
@@ -300,12 +307,12 @@ def login():
 		except TimeoutException:
 			if i < trials:
 				logger.info('LOGIN - Box per username non trovato. ' +
-				            'Tentativo {}'.format(i + 1))
+							'Tentativo {}'.format(i + 1))
 				brow.close()
 				return login()
 			else:
 				logger.info('LOGIN - Box per username non trovato. ' +
-				            'Chiudo il browser.')
+							'Chiudo il browser.')
 				brow.close()
 
 	# Inserisco la password
@@ -319,12 +326,12 @@ def login():
 		except TimeoutException:
 			if i < trials:
 				logger.info('LOGIN - Box per password non trovato. ' +
-				            'Tentativo {}'.format(i + 1))
+							'Tentativo {}'.format(i + 1))
 				brow.close()
 				return login()
 			else:
 				logger.info('LOGIN - Box per password non trovato. ' +
-				            'Chiudo il browser.')
+							'Chiudo il browser.')
 				brow.close()
 
 	# Clicco il tasto ACCEDI
@@ -338,12 +345,12 @@ def login():
 		except TimeoutException:
 			if i < trials:
 				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
-				            'Tentativo {}'.format(i + 1))
+							'Tentativo {}'.format(i + 1))
 				brow.close()
 				return login()
 			else:
 				logger.info('LOGIN - Tasto "ACCEDI" non trovato. ' +
-				            'Chiudo il browser.')
+							'Chiudo il browser.')
 				brow.close()
 
 	# Aspetto che il tasto della lega sia cliccabile per essere sicuro che la
@@ -356,12 +363,12 @@ def login():
 		except TimeoutException:
 			if i < trials:
 				logger.info('LOGIN - Tasto "FANTASCANDALO" non trovato. ' +
-				            'Tentativo {}'.format(i + 1))
+							'Tentativo {}'.format(i + 1))
 				brow.refresh()
 				return login()
 			else:
 				logger.info('LOGIN - Tasto "FANTASCANDALO" non trovato. ' +
-				            'Chiudo il browser.')
+							'Chiudo il browser.')
 				brow.close()
 
 	return brow
@@ -416,13 +423,13 @@ def select_team(brow, fantasquadra):
 			except TimeoutException:
 				if i < trials:
 					logger.info('SELECT_TEAM - Tasto per aprire il menù a ' +
-					            'tendina non trovato. ' +
-					            'Tentativo: {}'.format(i + 1))
+								'tendina non trovato. ' +
+								'Tentativo: {}'.format(i + 1))
 					brow.refresh()
 					return select_team(brow, fantasquadra)
 				else:
 					logger.info('SELECT_TEAM - Tasto per aprire il menù a ' +
-					            'tendina non trovato. Chiudo il browser.')
+								'tendina non trovato. Chiudo il browser.')
 					brow.close()
 
 		# Clicco la fantasquadra corretta

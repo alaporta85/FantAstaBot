@@ -113,3 +113,50 @@
 2018-11-12 10:08:45,019 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
 2018-11-12 10:12:42,256 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
 2018-11-12 11:03:32,224 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 11:10:26,396 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 11:27:33,384 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 11:31:13,776 INFO: AGGIORNA_CESSIONI - BERNI aggiunto alla lista cessioni.
+2018-11-12 11:31:28,075 INFO: AGGIORNA_CESSIONI - Cessioni di BERNI da parte di Ciolle United effettuate correttamente
+2018-11-12 11:31:55,943 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-11-12 11:34:23,681 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 11:42:11,963 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 11:50:34,329 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 11:57:17,658 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 12:01:19,563 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 12:09:12,950 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 12:11:41,488 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-11-12 12:12:02,735 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-11-12 12:12:39,475 INFO: AGGIORNA_ACQUISTI - Acquisto di BERNI da parte di Ciolle United effettuato correttamente
+2018-11-12 12:15:12,657 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 12:19:51,399 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 12:31:35,308 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 12:34:30,273 INFO: AGGIORNA_CESSIONI - BERNI aggiunto alla lista cessioni.
+2018-11-12 12:34:52,595 INFO: AGGIORNA_CESSIONI - Cessioni di BERNI da parte di Ciolle United effettuate correttamente
+2018-11-12 12:35:26,957 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-11-12 12:36:54,602 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 12:39:14,057 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-11-12 12:39:31,817 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-11-12 12:45:59,023 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 13:34:06,839 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 13:36:26,397 INFO: AGGIORNA_CESSIONI - BERNI aggiunto alla lista cessioni.
+2018-11-12 13:36:42,672 INFO: AGGIORNA_CESSIONI - Cessioni di BERNI da parte di Ciolle United effettuate correttamente
+2018-11-12 13:42:49,232 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 13:50:10,554 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 13:52:06,555 INFO: AGGIORNA_CESSIONI - BERNI aggiunto alla lista cessioni.
+2018-11-12 13:52:31,417 INFO: AGGIORNA_CESSIONI - Cessioni di BERNI da parte di Ciolle United effettuate correttamente
+2018-11-12 13:52:59,728 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-11-12 13:55:06,745 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 13:56:49,299 INFO: AGGIORNA_CESSIONI - SECULIN aggiunto alla lista cessioni.
+2018-11-12 13:57:06,084 INFO: AGGIORNA_CESSIONI - Cessioni di SECULIN da parte di Ciolle United effettuate correttamente
+2018-11-12 13:57:33,624 INFO: AGGIORNA_ACQUISTI - Acquisto di BERNI da parte di Ciolle United effettuato correttamente
+2018-11-12 14:17:08,407 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 14:20:50,705 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 14:28:17,927 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 14:31:45,127 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: SECULIN, 1. Cessioni: BERNI
+2018-11-12 14:37:58,018 INFO: AGGIORNA_CESSIONI - BERNI aggiunto alla lista cessioni.
+2018-11-12 14:38:13,575 INFO: AGGIORNA_CESSIONI - Cessioni di BERNI da parte di Ciolle United effettuate correttamente
+2018-11-12 14:38:36,963 INFO: AGGIORNA_ACQUISTI - Acquisto di SECULIN da parte di Ciolle United effettuato correttamente
+2018-11-12 14:41:56,657 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 14:45:43,306 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
+2018-11-12 14:48:07,421 INFO: CHIUDI_POPUP - Popup non trovato.
+2018-11-12 14:50:54,081 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: BERNI, 1. Cessioni: SECULIN
