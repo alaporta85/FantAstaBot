@@ -261,7 +261,7 @@ def login():
 	chop = webdriver.ChromeOptions()
 	chop.add_extension('AdBlock_v3.34.0.crx')
 	brow = webdriver.Chrome(chrome_path, chrome_options=chop)
-	time.sleep(20)
+	time.sleep(30)
 
 	handles = brow.window_handles
 	brow.switch_to.window(handles[1])
@@ -271,6 +271,7 @@ def login():
 	brow.get(url_lega)
 
 	chiudi_popup(brow)
+	time.sleep(20)
 
 	# Clicca il tasto 'ACCEDI'
 	accedi = ('.//button[@class="hidden-logged btn btn-primary btn-sm ' +
@@ -279,6 +280,7 @@ def login():
 		try:
 			wait_clickable(brow, WAIT, accedi)
 			brow.find_element_by_xpath(accedi).click()
+			time.sleep(3)
 			break
 		except TimeoutException:
 			if i < trials:
