@@ -12,7 +12,7 @@ dispatcher = updater.dispatcher
 
 # True durante il debugging, reindirizza a testazza tutti i messaggi
 # solitamente mandati al gruppo
-BLOCK = False
+BLOCK = True
 fanta_id = -318148079
 polps_id = 67507055
 
@@ -105,7 +105,7 @@ def autobid(bot, update, args):
 	chat_id = update.message.chat_id
 	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
-		                        text='Utilizza la chat privata')
+		                        text='Bravo il coglione! Utilizza la chat privata e cancella il messaggio!')
 
 	user = select_user(update)
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1021,7 +1021,7 @@ def confermo_pagamento(bot, update):
 	bot.send_message(parse_mode='HTML', chat_id=group_id,
 	                 text=(message + separ + crea_riepilogo(dt)))
 
-	# sf.aggiorna_rosa_online(user, (pl, pr), mn)
+	sf.aggiorna_rosa_online(user, (pl, pr), mn)
 
 
 def crea_riepilogo(dt_now):
@@ -1235,7 +1235,7 @@ def message_with_offers(list_of_offers, shift, dt_now, msg):
 		if diff < 0:
 			diff = abs(diff)
 			hh = - int(diff // 3600)
-			mm = - int((diff % 3600) // 60)
+			mm = int((diff % 3600) // 60)
 		else:
 			hh = int(diff // 3600)
 			mm = int((diff % 3600) // 60)
