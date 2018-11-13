@@ -10,18 +10,18 @@ updater = Updater(token=f.readline())
 f.close()
 dispatcher = updater.dispatcher
 
-# True durante il debugging, reindirizza a testazza tutti i messaggi
+# True durante il debugging, reindirizza a Testazza tutti i messaggi
 # solitamente mandati al gruppo
-BLOCK = True
+BLOCK = False
 fanta_id = -318148079
 polps_id = 67507055
 
 # Tempo in secondi per considerare vinta un'asta
-time_window1 = 900
+time_window1 = 86400
 # Tempo in secondi per ufficializzare
-time_window2 = 900
+time_window2 = 86400
 
-separ = '\n\n' + '_' * 28 + '\n\n\n'
+separ = '\n\n' + '_' * 25 + '\n\n\n'
 
 
 def aggiorna_offerte_chiuse(dt_now, return_offers=False):
@@ -105,7 +105,8 @@ def autobid(bot, update, args):
 	chat_id = update.message.chat_id
 	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
-		                        text='Bravo il coglione! Utilizza la chat privata e cancella il messaggio!')
+		                        text=('Grazie per avercelo fatto sapere ' +
+		                              'ma devi mandarlo in chat privata.'))
 
 	user = select_user(update)
 	dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
