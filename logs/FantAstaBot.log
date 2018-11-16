@@ -250,3 +250,7 @@
 2018-11-16 12:20:44,008 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: JOAO MARIO, 5. Cessioni: LISANDRO LOPEZ, HALLFREDSSON
 2018-11-16 18:24:50,240 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: MBAYE, 9. Cessioni: ZUKANOVIC
 2018-11-16 18:53:39,168 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: MBAYE, 9. Cessioni: ZUKANOVIC
+2018-11-16 19:04:52,368 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: MBAYE, 9. Cessioni: ZUKANOVIC
+2018-11-16 19:06:03,857 INFO: AGGIORNA_CESSIONI - ZUKANOVIC aggiunto alla lista cessioni.
+2018-11-16 19:06:07,062 INFO: AGGIORNA_CESSIONI - Cessioni di ZUKANOVIC da parte di FC STRESS effettuate correttamente
+2018-11-16 19:06:19,393 INFO: AGGIORNA_ACQUISTI - Acquisto di MBAYE da parte di FC STRESS effettuato correttamente
