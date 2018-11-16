@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import db_functions as dbf
 import extra_functions as ef
 import selenium_function as sf
@@ -133,9 +133,6 @@ def autobid(bot, update, args):
 	# Creo gli oggetti necessari per criptare il valore dell'autobid e li
 	# inserisco nel db
 	nonce, tag, value = dbf.encrypt_value(ab)
-	print(type(nonce))
-	print(type(tag))
-	print(type(value))
 	dbf.db_insert(
 			table='autobids',
 			columns=['autobid_user', 'autobid_player', 'autobid_nonce',
@@ -1211,6 +1208,11 @@ def info_autobid(bot, update):
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
 
+def inizio_mercato(bot, update):
+
+	bot.send_message(chat_id=fanta_id, text='Potete iniziare, stronzi!')
+
+
 def message_with_offers(list_of_offers, shift, dt_now, msg):
 
 	"""
@@ -1800,10 +1802,13 @@ def ufficiali(bot, update):
 
 		message += ('\n\t\t\t\t- <i>{}</i> '.format(user) +
 		            'acquista <b>{}</b> ({}) a {}. '.format(pl, tm, pr) +
-		            'Pagamento: <i>{}</i>.'.format(pagamento))
+		            'Pagamento: <i>{}</i>.\n'.format(pagamento))
 
 	return bot.send_message(parse_mode='HTML', chat_id=chat_id, text=message)
 
+
+# inizio = updater.job_queue
+# inizio.run_once(inizio_mercato, when=time(00, 00, 00))
 
 autobid_handler = CommandHandler('autobid', autobid, pass_args=True)
 confermo_autobid_handler = CommandHandler('confermo_autobid', confermo_autobid)

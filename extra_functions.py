@@ -27,11 +27,12 @@ def aggiorna_db_con_nuove_quotazioni():
 			last = name
 
 	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
+	pls_in_db = dbf.db_select(table='players', columns_in=['player_name'])
 
 	for x in range(len(players)):
 		role, pl, team, price = players.iloc[x].values
 
-		if pl in players['Nome'].values:
+		if pl in pls_in_db:
 			dbf.db_update(
 					table='players',
 					columns=['player_team', 'player_price'],
@@ -41,8 +42,8 @@ def aggiorna_db_con_nuove_quotazioni():
 			dbf.db_insert(
 					table='players',
 					columns=['player_name', 'player_team',
-					         'player_roles', 'player_price'],
-					values=[pl, team[:3].upper(), role, price])
+					         'player_roles', 'player_price', 'player_status'],
+					values=[pl, team[:3].upper(), role, int(price), 'FREE'])
 
 	del players
 

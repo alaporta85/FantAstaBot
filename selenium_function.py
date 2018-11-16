@@ -108,6 +108,7 @@ def aggiorna_acquisto(brow, fantasquadra, acquisto):
 	logger.info('AGGIORNA_ACQUISTI - Acquisto di {} '.format(acquisto[0]) +
 				'da parte di {} effettuato correttamente'.format(fantasquadra))
 
+	time.sleep(5)
 	brow.close()
 
 

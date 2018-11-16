@@ -56,7 +56,7 @@ Se ad esempio dovessi pagare i 20 di Petagna con Schick + 5 milioni:
 NOTA1: Vale lo stesso discorso di prima sull'importanza della virgola.
 
 NOTA2: Il primo nome DEVE essere il giocatore acquistato, per tutto il restoxx
-l'ordine non ha imposrtanza.
+l'ordine non ha importanza.
 
 
 6) /confermo_pagamento: non ha bisogno di spiegazioni

@@ -193,3 +193,60 @@
 2018-11-12 17:49:53,292 INFO: AGGIORNA_ACQUISTI - Acquisto di BERNI da parte di Ciolle United effettuato correttamente
 2018-11-12 18:32:29,612 INFO: /INFO - Fc Roxy
 2018-11-12 18:35:37,774 INFO: /INFO_AUTOBID - Fc Roxy
+2018-11-13 15:00:51,087 INFO: /INFO - Ciolle United
+2018-11-13 15:00:56,104 INFO: /INFO - Ciolle United
+2018-11-13 19:45:25,917 INFO: /INFO - Atletico cu tri Arancini
+2018-11-13 19:45:35,303 INFO: /INFO - Atletico cu tri Arancini
+2018-11-13 19:54:31,184 INFO: /INFO - Ciolle United
+2018-11-13 19:58:24,471 INFO: /INFO_AUTOBID - Ciolle United
+2018-11-14 00:10:42,225 INFO: /INFO - FC STRESS
+2018-11-14 00:17:07,668 INFO: /INFO - Bucalina
+2018-11-14 08:39:31,759 INFO: /INFO_AUTOBID - Bucalina
+2018-11-14 09:06:08,348 INFO: /INFO - FC STRESS
+2018-11-15 00:10:30,035 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: RINCON, 9. Cessioni: BIGLIA
+2018-11-15 00:11:43,237 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: BENATIA, 9. Cessioni: FALCINELLI
+2018-11-15 00:13:30,804 INFO: AGGIORNA_CESSIONI - FALCINELLI aggiunto alla lista cessioni.
+2018-11-15 00:13:35,748 INFO: AGGIORNA_CESSIONI - Cessioni di FALCINELLI da parte di Bucalina effettuate correttamente
+2018-11-15 00:13:56,138 INFO: AGGIORNA_ACQUISTI - Acquisto di BENATIA da parte di Bucalina effettuato correttamente
+2018-11-15 00:31:52,718 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: MIGUEL VELOSO, 3. Cessioni: 
+2018-11-15 00:33:43,642 INFO: AGGIORNA_ACQUISTI - Acquisto di MIGUEL VELOSO da parte di Bucalina effettuato correttamente
+2018-11-15 08:18:04,443 INFO: /INFO - fcpastaboy
+2018-11-15 08:18:34,505 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per fcpastaboy. Acquisto: AINA, 6. Cessioni: MARCANO, DI GAUDIO
+2018-11-15 08:20:44,549 INFO: AGGIORNA_CESSIONI - MARCANO aggiunto alla lista cessioni.
+2018-11-15 08:20:48,841 INFO: AGGIORNA_CESSIONI - DI GAUDIO aggiunto alla lista cessioni.
+2018-11-15 08:20:54,045 INFO: AGGIORNA_CESSIONI - Cessioni di MARCANO, DI GAUDIO da parte di fcpastaboy effettuate correttamente
+2018-11-15 08:21:17,011 INFO: AGGIORNA_ACQUISTI - Acquisto di AINA da parte di fcpastaboy effettuato correttamente
+2018-11-15 08:22:16,295 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Atletico cu tri Arancini. Acquisto: KRUNIC, 10. Cessioni: GOMIS A, DIJKS
+2018-11-15 08:23:59,357 INFO: AGGIORNA_CESSIONI - GOMIS A aggiunto alla lista cessioni.
+2018-11-15 08:24:02,579 INFO: AGGIORNA_CESSIONI - DIJKS aggiunto alla lista cessioni.
+2018-11-15 08:24:09,189 INFO: AGGIORNA_CESSIONI - Cessioni di GOMIS A, DIJKS da parte di Atletico cu tri Arancini effettuate correttamente
+2018-11-15 08:24:33,593 INFO: AGGIORNA_ACQUISTI - Acquisto di KRUNIC da parte di Atletico cu tri Arancini effettuato correttamente
+2018-11-15 14:44:27,207 INFO: /INFO - FC STRESS
+2018-11-15 14:45:02,073 INFO: /INFO - FC STRESS
+2018-11-15 14:45:43,088 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: NAGY, 4. Cessioni: LOCATELLI M
+2018-11-15 14:47:36,330 INFO: AGGIORNA_CESSIONI - LOCATELLI M aggiunto alla lista cessioni.
+2018-11-15 14:47:42,104 INFO: AGGIORNA_CESSIONI - Cessioni di LOCATELLI M da parte di FC STRESS effettuate correttamente
+2018-11-15 14:48:02,049 INFO: AGGIORNA_ACQUISTI - Acquisto di NAGY da parte di FC STRESS effettuato correttamente
+2018-11-15 16:33:23,321 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: ROMERO C, 3. Cessioni: ROMAGNA
+2018-11-15 16:35:16,554 INFO: AGGIORNA_CESSIONI - ROMAGNA aggiunto alla lista cessioni.
+2018-11-15 16:35:24,843 INFO: AGGIORNA_CESSIONI - Cessioni di ROMAGNA da parte di Ciolle United effettuate correttamente
+2018-11-15 16:35:44,760 INFO: AGGIORNA_ACQUISTI - Acquisto di ROMERO C da parte di Ciolle United effettuato correttamente
+2018-11-15 16:36:00,320 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ciolle United. Acquisto: CALABRESI, 5. Cessioni: DE MAIO
+2018-11-15 16:37:51,925 INFO: AGGIORNA_CESSIONI - DE MAIO aggiunto alla lista cessioni.
+2018-11-15 16:38:01,081 INFO: AGGIORNA_CESSIONI - Cessioni di DE MAIO da parte di Ciolle United effettuate correttamente
+2018-11-15 16:38:21,598 INFO: AGGIORNA_ACQUISTI - Acquisto di CALABRESI da parte di Ciolle United effettuato correttamente
+2018-11-15 17:49:52,071 INFO: /INFO - FC STRESS
+2018-11-15 17:51:33,461 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: JOAO PEDRO, 15. Cessioni: BABACAR
+2018-11-15 17:53:15,076 INFO: AGGIORNA_CESSIONI - BABACAR aggiunto alla lista cessioni.
+2018-11-15 17:53:20,624 INFO: AGGIORNA_CESSIONI - Cessioni di BABACAR da parte di FC STRESS effettuate correttamente
+2018-11-15 17:53:43,726 INFO: AGGIORNA_ACQUISTI - Acquisto di JOAO PEDRO da parte di FC STRESS effettuato correttamente
+2018-11-15 21:39:15,337 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC BOMBAGALLO. Acquisto: EL SHAARAWY, 31. Cessioni: PANDEV, KURTIC
+2018-11-15 21:41:24,310 INFO: AGGIORNA_CESSIONI - KURTIC aggiunto alla lista cessioni.
+2018-11-15 21:41:26,863 INFO: AGGIORNA_CESSIONI - PANDEV aggiunto alla lista cessioni.
+2018-11-15 21:41:31,539 INFO: AGGIORNA_CESSIONI - Cessioni di PANDEV, KURTIC da parte di FC BOMBAGALLO effettuate correttamente
+2018-11-15 21:41:55,782 INFO: AGGIORNA_ACQUISTI - Acquisto di EL SHAARAWY da parte di FC BOMBAGALLO effettuato correttamente
+2018-11-15 23:10:15,902 INFO: /INFO - Ac Picchia
+2018-11-16 08:53:35,780 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: LAZZARI M, 16. Cessioni: GIACCHERINI, RIGONI L
+2018-11-16 12:20:44,008 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: JOAO MARIO, 5. Cessioni: LISANDRO LOPEZ, HALLFREDSSON
+2018-11-16 18:24:50,240 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: MBAYE, 9. Cessioni: ZUKANOVIC
+2018-11-16 18:53:39,168 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: MBAYE, 9. Cessioni: ZUKANOVIC
