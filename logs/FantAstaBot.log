@@ -254,3 +254,45 @@
 2018-11-16 19:06:03,857 INFO: AGGIORNA_CESSIONI - ZUKANOVIC aggiunto alla lista cessioni.
 2018-11-16 19:06:07,062 INFO: AGGIORNA_CESSIONI - Cessioni di ZUKANOVIC da parte di FC STRESS effettuate correttamente
 2018-11-16 19:06:19,393 INFO: AGGIORNA_ACQUISTI - Acquisto di MBAYE da parte di FC STRESS effettuato correttamente
+2018-11-16 20:01:40,011 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: ROGERIO, 7. Cessioni: BONAVENTURA
+2018-11-16 20:03:58,250 INFO: AGGIORNA_CESSIONI - BONAVENTURA aggiunto alla lista cessioni.
+2018-11-16 20:04:04,885 INFO: AGGIORNA_CESSIONI - Cessioni di BONAVENTURA da parte di FC STRESS effettuate correttamente
+2018-11-16 20:04:28,591 INFO: AGGIORNA_ACQUISTI - Acquisto di ROGERIO da parte di FC STRESS effettuato correttamente
+2018-11-16 21:18:20,692 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Fc Roxy. Acquisto: SAMIR, 9. Cessioni: SILVESTRE
+2018-11-16 23:42:03,582 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Bucalina. Acquisto: DJIDJI, 5. Cessioni: 
+2018-11-16 23:43:57,950 INFO: AGGIORNA_ACQUISTI - Acquisto di DJIDJI da parte di Bucalina effettuato correttamente
+2018-11-17 00:15:18,524 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: BESSA, 7. Cessioni: ROSSETTINI
+2018-11-17 00:16:52,405 INFO: AGGIORNA_CESSIONI - ROSSETTINI aggiunto alla lista cessioni.
+2018-11-17 00:16:58,775 INFO: AGGIORNA_CESSIONI - Cessioni di ROSSETTINI da parte di FC STRESS effettuate correttamente
+2018-11-17 00:17:17,238 INFO: AGGIORNA_ACQUISTI - Acquisto di BESSA da parte di FC STRESS effettuato correttamente
+2018-11-17 21:32:59,733 INFO: /INFO - Fc Roxy
+2018-11-17 21:33:04,752 INFO: /INFO - Fc Roxy
+2018-11-17 23:03:35,310 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: EKDAL, 8. Cessioni: PULGAR
+2018-11-17 23:05:43,404 INFO: AGGIORNA_CESSIONI - PULGAR aggiunto alla lista cessioni.
+2018-11-17 23:05:48,350 INFO: AGGIORNA_CESSIONI - Cessioni di PULGAR da parte di FC STRESS effettuate correttamente
+2018-11-17 23:06:08,473 INFO: AGGIORNA_ACQUISTI - Acquisto di EKDAL da parte di FC STRESS effettuato correttamente
+2018-11-18 02:09:25,380 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Atletico cu tri Arancini. Acquisto: SILVESTRE, 7. Cessioni: VICARI
+2018-11-18 02:10:59,357 INFO: AGGIORNA_CESSIONI - VICARI aggiunto alla lista cessioni.
+2018-11-18 02:11:06,315 INFO: AGGIORNA_CESSIONI - Cessioni di VICARI da parte di Atletico cu tri Arancini effettuate correttamente
+2018-11-18 02:11:25,668 INFO: AGGIORNA_ACQUISTI - Acquisto di SILVESTRE da parte di Atletico cu tri Arancini effettuato correttamente
+2018-11-18 19:50:03,773 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Fc Roxy. Acquisto: PELLEGRINI LO, 26. Cessioni: HAMSIK, PASALIC
+2018-11-18 23:24:44,058 INFO: /INFO - Ac Picchia
+2018-11-18 23:31:45,497 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ac Picchia. Acquisto: BENTANCUR, 9. Cessioni: KEITA B
+2018-11-18 23:33:49,932 INFO: AGGIORNA_CESSIONI - KEITA B aggiunto alla lista cessioni.
+2018-11-18 23:33:55,066 INFO: AGGIORNA_CESSIONI - Cessioni di KEITA B da parte di Ac Picchia effettuate correttamente
+2018-11-18 23:34:16,573 INFO: AGGIORNA_ACQUISTI - Acquisto di BENTANCUR da parte di Ac Picchia effettuato correttamente
+2018-11-18 23:34:52,845 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ac Picchia. Acquisto: ANTONELLI, 5. Cessioni: 
+2018-11-19 14:07:02,811 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: BIABIANY, 3. Cessioni: 
+2018-11-19 14:07:49,598 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC STRESS. Acquisto: DI GAUDIO, 4. Cessioni: NAGY
+2018-11-19 14:09:25,361 INFO: AGGIORNA_CESSIONI - NAGY aggiunto alla lista cessioni.
+2018-11-19 14:09:31,198 INFO: AGGIORNA_CESSIONI - Cessioni di NAGY da parte di FC STRESS effettuate correttamente
+2018-11-19 14:09:56,079 INFO: AGGIORNA_ACQUISTI - Acquisto di DI GAUDIO da parte di FC STRESS effettuato correttamente
+2018-11-19 21:17:30,038 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per FC BOMBAGALLO. Acquisto: HAMSIK, 12. Cessioni: BARAK
+2018-11-20 01:31:29,121 INFO: /INFO - Ac Picchia
+2018-11-20 01:32:02,205 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ac Picchia. Acquisto: PASALIC, 12. Cessioni: CICIRETTI
+2018-11-20 01:41:30,888 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ac Picchia. Acquisto: ZAPATA C, 3. Cessioni: CACCIATORE
+2018-11-21 09:35:03,121 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ac Picchia. Acquisto: PISACANE, 4. Cessioni: CORIC
+2018-11-21 09:47:08,657 INFO: AGGIORNA_ROSA_ONLINE - Tentativo di aggiornamento rosa per Ac Picchia. Acquisto: PISACANE, 4. Cessioni: CORIC
+2018-11-21 09:50:00,437 INFO: AGGIORNA_CESSIONI - CORIC aggiunto alla lista cessioni.
+2018-11-21 09:50:06,595 INFO: AGGIORNA_CESSIONI - Cessioni di CORIC da parte di Ac Picchia effettuate correttamente
+2018-11-21 09:50:32,159 INFO: AGGIORNA_ACQUISTI - Acquisto di PISACANE da parte di Ac Picchia effettuato correttamente

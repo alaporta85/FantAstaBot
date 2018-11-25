@@ -262,7 +262,7 @@ def login():
 	chop = webdriver.ChromeOptions()
 	chop.add_extension('AdBlock_v3.34.0.crx')
 	brow = webdriver.Chrome(chrome_path, chrome_options=chop)
-	time.sleep(30)
+	time.sleep(60)
 
 	handles = brow.window_handles
 	brow.switch_to.window(handles[1])

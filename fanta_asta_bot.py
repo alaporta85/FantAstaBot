@@ -1019,7 +1019,7 @@ def confermo_pagamento(bot, update):
 	bot.send_message(parse_mode='HTML', chat_id=group_id,
 	                 text=(message + separ + crea_riepilogo(dt)))
 
-	sf.aggiorna_rosa_online(user, (pl, pr), mn)
+	# sf.aggiorna_rosa_online(user, (pl, pr), mn)
 
 
 def crea_riepilogo(dt_now):
