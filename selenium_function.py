@@ -1,7 +1,6 @@
 import os
 import time
 import log_functions as log
-from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -175,7 +174,7 @@ def aggiorna_cessioni(brow, fantasquadra, cessioni):
 			logger.info('AGGIORNA_CESSIONI - ' +
 						'Cessioni di {} '.format(', '.join(cessioni)) +
 						'da parte di {} effettuate correttamente'.format(
-						fantasquadra))
+						 fantasquadra))
 			time.sleep(2)
 			break
 		except TimeoutException:

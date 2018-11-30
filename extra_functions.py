@@ -5,7 +5,9 @@ from pandas import ExcelWriter
 from nltk.metrics.distance import jaccard_distance
 from nltk.util import ngrams
 
+
 anno = '2018-2019'
+dbase = 'fanta_asta_db.db'
 
 
 def aggiorna_db_con_nuove_quotazioni():
@@ -27,19 +29,22 @@ def aggiorna_db_con_nuove_quotazioni():
 			last = name
 
 	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
-	pls_in_db = dbf.db_select(table='players', columns_in=['player_name'])
+	pls_in_db = dbf.db_select(database=dbase, table='players',
+	                          columns_in=['player_name'])
 
 	for x in range(len(players)):
 		role, pl, team, price = players.iloc[x].values
 
 		if pl in pls_in_db:
 			dbf.db_update(
+					database=dbase,
 					table='players',
 					columns=['player_team', 'player_price'],
 					values=[team[:3].upper(), int(price)],
 					where='player_name = "{}"'.format(pl))
 		else:
 			dbf.db_insert(
+					database=dbase,
 					table='players',
 					columns=['player_name', 'player_team',
 					         'player_roles', 'player_price', 'player_status'],
@@ -64,11 +69,13 @@ def aggiorna_status_calciatori():
 		pls = asta[team].dropna()
 		for pl in pls:
 			dbf.db_update(
+					database=dbase,
 					table='players',
 					columns=['player_status'],
 					values=[team], where='player_name = "{}"'.format(pl))
 
 	dbf.db_update(
+			database=dbase,
 			table='players',
 			columns=['player_status'],
 			values=['FREE'], where='player_status IS NULL')
@@ -86,6 +93,7 @@ def correggi_file_asta():
 	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
 	                     header=0, sheet_name="Foglio1")
 	players = dbf.db_select(
+			database=dbase,
 			table='players',
 			columns_in=['player_name', 'player_team'],
 			dataframe=True)
@@ -128,7 +136,7 @@ def jaccard_result(input_option, all_options, ngrm):
 	jac_res = ''
 
 	for opt in all_options:
-		p = opt.replace(' ', '')
+		p = opt.upper().replace(' ', '')
 		trit = set(ngrams(p, ngrm))
 		jd = jaccard_distance(tri_guess, trit)
 		if not jd:
@@ -154,7 +162,7 @@ def quotazioni_iniziali():
 
 	"""
 
-	dbf.empty_table('players')
+	dbf.empty_table(database=dbase, table='players')
 
 	players = pd.read_excel(os.getcwd() + '/Quotazioni.xlsx',
 	                        sheet_name="Tutti", usecols=[1, 2, 3, 4])
@@ -162,6 +170,7 @@ def quotazioni_iniziali():
 	for i in range(len(players)):
 		role, name, team, price = players.iloc[i].values
 		dbf.db_insert(
+				database=dbase,
 				table='players',
 				columns=['player_name', 'player_team',
 				         'player_roles', 'player_price'],

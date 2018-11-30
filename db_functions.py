@@ -6,10 +6,12 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 
-def db_delete(table, where):
+def db_delete(database, table, where):
 
     """
     Delete row from table.
+
+    :param database: .db object
 
     :param table: str
 
@@ -17,9 +19,10 @@ def db_delete(table, where):
 
 
     :return: Nothing
+
     """
 
-    db, c = start_db()
+    db, c = start_db(database)
 
     c.execute('''DELETE FROM {} WHERE {}'''.format(table, where))
 
@@ -34,8 +37,11 @@ def decrypt_value(nonce, tag, encrypted_text):
     Utilizzata all'interno di /conferma_autobid.
 
     :param nonce: bytes array
+
     :param tag: bytes array
+
     :param encrypted_text: bytes array
+
 
     :return: str, il valore dell'autobid decriptato
 
@@ -55,6 +61,7 @@ def encrypt_value(value):
 
     :param value: str, valore autobid. Ex. "35".
 
+
     :return: 3 bytes arrays
 
     """
@@ -67,23 +74,28 @@ def encrypt_value(value):
     return cipher.nonce, tag, ciphertext
 
 
-def db_insert(table, columns, values):
+def db_insert(database, table, columns, values):
 
     """
     Insert a new row in the table assigning the specifies values to the
     specified columns. If last_row=True, return the id of the inserted row.
 
+    :param database: .db object
+
     :param table: str, name of the table
+
     :param columns: list, each element of the list is a column of the table.
                     Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
                     in the list will be loaded.
+
     :param values: list, values of the corresponding columns
+
 
     :return: int if last_row=True else nothing.
 
     """
 
-    db, c = start_db()
+    db, c = start_db(database)
 
     query = ('''INSERT INTO {} ({}) VALUES ({})'''.format(
             table,
@@ -96,11 +108,13 @@ def db_insert(table, columns, values):
     db.close()
 
 
-def db_select(table, columns_in=None, columns_out=None,
+def db_select(database, table, columns_in=None, columns_out=None,
               where=None, dataframe=False):
 
     """
     Return content from a specific table of the database.
+
+    :param database: .db object
 
     :param table: str, name of the table
 
@@ -120,7 +134,7 @@ def db_select(table, columns_in=None, columns_out=None,
     :return: Dataframe if dataframe=True else list of tuples.
     """
 
-    db, c = start_db()
+    db, c = start_db(database)
 
     if where:
         cursor = c.execute('''SELECT * FROM {} WHERE {}'''.format(table,
@@ -166,11 +180,13 @@ def db_select(table, columns_in=None, columns_out=None,
             return res2
 
 
-def db_update(table, columns, values, where):
+def db_update(database, table, columns, values, where):
 
     """
     Update values in the table assigning the specifies values to the
     specified columns.
+
+    :param database: .db object
 
     :param table: str, name of the table
 
@@ -186,7 +202,7 @@ def db_update(table, columns, values, where):
     :return: Nothing
     """
 
-    db, c = start_db()
+    db, c = start_db(database)
 
     query = ('''UPDATE {} SET {} WHERE {}'''.format(
             table,
@@ -199,10 +215,12 @@ def db_update(table, columns, values, where):
     db.close()
 
 
-def empty_table(table):
+def empty_table(database, table):
 
     """
     Called inside fill_db_with_quotes.
+
+    :param database: .db object
 
     :param table: str
 
@@ -210,7 +228,7 @@ def empty_table(table):
     :return: Nothing
     """
 
-    db, c = start_db()
+    db, c = start_db(database)
 
     c.execute('''DELETE FROM {}'''.format(table))
 
@@ -218,9 +236,9 @@ def empty_table(table):
     db.close()
 
 
-def start_db():
+def start_db(database):
 
-    db = sqlite3.connect('fanta_asta_db.db')
+    db = sqlite3.connect(database)
     c = db.cursor()
     c.execute("PRAGMA foreign_keys = ON")
 

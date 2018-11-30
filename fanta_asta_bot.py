@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 import db_functions as dbf
 import extra_functions as ef
 import selenium_function as sf
@@ -12,7 +12,7 @@ dispatcher = updater.dispatcher
 
 # True durante il debugging, reindirizza a Testazza tutti i messaggi
 # solitamente mandati al gruppo
-BLOCK = False
+BLOCK = True
 fanta_id = -318148079
 polps_id = 67507055
 
@@ -41,12 +41,14 @@ def aggiorna_offerte_chiuse(dt_now, return_offers=False):
 	"""
 
 	offers_win = dbf.db_select(
+			database=ef.dbase,
 			table='offers',
 			columns_in=['offer_id', 'offer_user', 'offer_player',
 			            'offer_price', 'offer_dt'],
 			where='offer_status = "Winning"')
 
 	offers_no = dbf.db_select(
+			database=ef.dbase,
 			table='offers',
 			columns_in=['offer_id', 'offer_user', 'offer_player',
 			            'offer_price', 'offer_dt'],
@@ -61,16 +63,19 @@ def aggiorna_offerte_chiuse(dt_now, return_offers=False):
 		if diff.total_seconds() > time_window1:
 			offers_no.append((of_id, tm, pl, pr, dt))
 			dbf.db_update(
+					database=ef.dbase,
 					table='offers',
 					columns=['offer_status'],
 					values=['Not Official'],
 					where='offer_id = {}'.format(of_id))
 			dbf.db_update(
+					database=ef.dbase,
 					table='players',
 					columns=['player_status'],
 					values=[tm],
 					where='player_name = "{}"'.format(pl))
 			dbf.db_delete(
+					database=ef.dbase,
 					table='autobids',
 					where='autobid_player = "{}"'.format(pl))
 
@@ -114,6 +119,7 @@ def autobid(bot, update, args):
 
 	# Elimino dal db tutti gli autobid precedenti non confermati dall'utente
 	dbf.db_delete(
+			database=ef.dbase,
 			table='autobids',
 			where=('autobid_user = "{}" AND '.format(user) +
 			       'autobid_status IS NULL'))
@@ -126,6 +132,7 @@ def autobid(bot, update, args):
 
 	# Squadra e ruoli
 	tm, rl = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_team', 'player_roles'],
 			where='player_name = "{}"'.format(jpl))[0]
@@ -134,6 +141,7 @@ def autobid(bot, update, args):
 	# inserisco nel db
 	nonce, tag, value = dbf.encrypt_value(ab)
 	dbf.db_insert(
+			database=ef.dbase,
 			table='autobids',
 			columns=['autobid_user', 'autobid_player', 'autobid_nonce',
 			         'autobid_tag', 'autobid_value'],
@@ -159,6 +167,7 @@ def autorilancio(user, player_name):
 	"""
 
 	offer = dbf.db_select(
+			database=ef.dbase,
 			table='offers',
 			columns_in=['offer_id'],
 			where=('offer_user = "{}" AND '.format(user) +
@@ -201,6 +210,7 @@ def check_autobid_format(args):
 
 	# Cerco nel db il calciatore corrispondente
 	jpl = ef.jaccard_result(pl, dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_name'],
 			where='player_status = "FREE"'), 3)
@@ -228,6 +238,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 	# Controllo se c'è già un'asta in corso per il calciatore
 	try:
 		last_id, last_user, last_offer = dbf.db_select(
+				database=ef.dbase,
 				table='offers',
 				columns_in=['offer_id', 'offer_user', 'offer_price'],
 				where=('offer_player = "{}" AND '.format(player) +
@@ -250,7 +261,11 @@ def check_autobid_value(user, player, new_id, new_ab):
 	# provando ad impostare. Se l'autobid è inferiore o uguale, lo elimino dal
 	# db e lo segnalo all'user
 	if new_ab <= last_offer:
-		dbf.db_delete(table='autobids', where='autobid_id = {}'.format(new_id))
+		dbf.db_delete(
+				database=ef.dbase,
+				table='autobids',
+				where='autobid_id = {}'.format(new_id))
+
 		return ("Valore autobid troppo basso. Impostare un valore superiore" +
 		        " all'attuale offerta vincente."), None
 
@@ -258,6 +273,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 	# abbia impostato anche lui un autobid
 	else:
 		old_ab = dbf.db_select(
+				database=ef.dbase,
 				table='autobids',
 				columns_in=['autobid_id', 'autobid_nonce', 'autobid_tag',
 				            'autobid_value'],
@@ -271,6 +287,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 		if not old_ab and user != last_user:
 
 			dbf.db_update(
+					database=ef.dbase,
 					table='offers',
 					columns=['offer_status'],
 					values=['Lost'],
@@ -279,11 +296,13 @@ def check_autobid_value(user, player, new_id, new_ab):
 			dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 			pl_id = dbf.db_select(
+					database=ef.dbase,
 					table='players',
 					columns_in=['player_id'],
 					where='player_name = "{}"'.format(player))[0]
 
 			dbf.db_insert(
+					database=ef.dbase,
 					table='offers',
 					columns=['offer_user', 'offer_player', 'offer_player_id',
 					         'offer_price', 'offer_dt', 'offer_status'],
@@ -292,6 +311,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 			# Cancello l'autobid nel caso venga raggiunto il suo valore
 			if new_ab == last_offer + 1:
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(new_id))
 
@@ -301,6 +321,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 				           crea_riepilogo_autobid(user))
 			else:
 				dbf.db_update(
+						database=ef.dbase,
 						table='autobids',
 						columns=['autobid_status'],
 						values=['Confirmed'],
@@ -320,6 +341,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 		elif not old_ab and user == last_user:
 
 			dbf.db_update(
+					database=ef.dbase,
 					table='autobids',
 					columns=['autobid_status'],
 					values=['Confirmed'],
@@ -341,23 +363,27 @@ def check_autobid_value(user, player, new_id, new_ab):
 			if new_ab > old_ab and user != last_user:
 
 				dbf.db_update(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_status'],
 						values=['Lost'],
 						where='offer_id = {}'.format(last_id))
 
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(old_id))
 
 				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 				pl_id = dbf.db_select(
+						database=ef.dbase,
 						table='players',
 						columns_in=['player_id'],
 						where='player_name = "{}"'.format(player))[0]
 
 				dbf.db_insert(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_user', 'offer_player',
 						         'offer_player_id',
@@ -368,6 +394,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 
 				if new_ab == old_ab + 1:
 					dbf.db_delete(
+							database=ef.dbase,
 							table='autobids',
 							where='autobid_id = {}'.format(new_id))
 
@@ -377,6 +404,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 					           crea_riepilogo_autobid(user))
 				else:
 					dbf.db_update(
+							database=ef.dbase,
 							table='autobids',
 							columns=['autobid_status'],
 							values=['Confirmed'],
@@ -399,6 +427,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 
 				nonce, tag, value = dbf.encrypt_value(str(new_ab))
 				dbf.db_update(
+						database=ef.dbase,
 						table='autobids',
 						columns=['autobid_nonce', 'autobid_tag',
 						         'autobid_value'],
@@ -406,6 +435,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 						where='autobid_id = {}'.format(old_id))
 
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(new_id))
 
@@ -422,10 +452,12 @@ def check_autobid_value(user, player, new_id, new_ab):
 				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(new_id))
 
 				dbf.db_update(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_price', 'offer_dt'],
 						values=[new_ab + 1, dt],
@@ -433,6 +465,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 
 				if old_ab == new_ab + 1:
 					dbf.db_delete(
+							database=ef.dbase,
 							table='autobids',
 							where='autobid_id = {}'.format(old_id))
 
@@ -450,6 +483,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 
 				nonce, tag, value = dbf.encrypt_value(str(new_ab))
 				dbf.db_update(
+						database=ef.dbase,
 						table='autobids',
 						columns=['autobid_nonce', 'autobid_tag',
 						         'autobid_value'],
@@ -457,6 +491,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 						where='autobid_id = {}'.format(old_id))
 
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(new_id))
 
@@ -472,19 +507,23 @@ def check_autobid_value(user, player, new_id, new_ab):
 				dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 				sex = dbf.db_select(
+						database=ef.dbase,
 						table='teams',
 						columns_in=['team_sex'],
 						where='team_name = "{}"'.format(last_user))[0]
 
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(new_id))
 
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(old_id))
 
 				dbf.db_update(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_price', 'offer_dt'],
 						values=[new_ab, dt],
@@ -503,6 +542,7 @@ def check_autobid_value(user, player, new_id, new_ab):
 			# dell'offerta è lo stesso user.
 			elif new_ab == old_ab and user == last_user:
 				dbf.db_delete(
+						database=ef.dbase,
 						table='autobids',
 						where='autobid_id = {}'.format(new_id))
 				return 'Hai già impostato questo valore di autobid.', None
@@ -541,6 +581,7 @@ def check_offer_format(args):
 
 	# Cerco il calciatore corrispondente all'input dell'user ed aggiorno il db
 	jpl = ef.jaccard_result(pl, dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_name'],
 			where='player_status = "FREE"'), 3)
@@ -572,6 +613,7 @@ def check_offer_value(user, offer_id, player, dt):
 	"""
 
 	offer = dbf.db_select(
+			database=ef.dbase,
 			table='offers',
 			columns_in=['offer_price'],
 			where='offer_id = {}'.format(offer_id))[0]
@@ -580,6 +622,7 @@ def check_offer_value(user, offer_id, player, dt):
 	# calciatore, qualora ci sia
 	try:
 		last_id, last_user, last_offer = dbf.db_select(
+				database=ef.dbase,
 				table='offers',
 				columns_in=['offer_id', 'offer_user', 'offer_price'],
 				where=('offer_player = "{}" AND '.format(player) +
@@ -593,16 +636,21 @@ def check_offer_value(user, offer_id, player, dt):
 	# del calciatore ed aggiorno il db
 	if not last_offer:
 		price = dbf.db_select(
+				database=ef.dbase,
 				table='players',
 				columns_in=['player_price'],
 				where='player_name = "{}"'.format(player))[0]
 		if offer < price:
-			dbf.db_delete(table='offers',
-			              where='offer_id = {}'.format(offer_id))
+			dbf.db_delete(
+					database=ef.dbase,
+					table='offers',
+			        where='offer_id = {}'.format(offer_id))
+
 			return 'Offerta troppo bassa. Quotazione: {}'.format(price)
 		else:
 
 			dbf.db_update(
+					database=ef.dbase,
 					table='offers',
 					columns=['offer_dt', 'offer_status'],
 					values=[dt, 'Winning'],
@@ -619,8 +667,11 @@ def check_offer_value(user, offer_id, player, dt):
 	# esistente
 	else:
 		if offer <= last_offer:
-			dbf.db_delete(table='offers',
-			              where='offer_id = {}'.format(offer_id))
+			dbf.db_delete(
+					database=ef.dbase,
+					table='offers',
+			        where='offer_id = {}'.format(offer_id))
+
 			return ('Offerta troppo bassa. ' +
 			        'Ultimo rilancio: {}, {}'.format(last_offer, last_user))
 		else:
@@ -630,6 +681,7 @@ def check_offer_value(user, offer_id, player, dt):
 			# modo da gestire il codice successivo
 			try:
 				iid, ab_user, nonce, tag, encr_value = dbf.db_select(
+						database=ef.dbase,
 						table='autobids',
 						columns_in=['autobid_id', 'autobid_user',
 						            'autobid_nonce', 'autobid_tag',
@@ -647,16 +699,21 @@ def check_offer_value(user, offer_id, player, dt):
 			# utente e, qualora questo nuovo valore raggiunga il suo limite
 			# di autobid, elimino tale autobid dal db
 			if offer < last_ab:
-				dbf.db_delete(table='offers',
-				              where='offer_id = {}'.format(offer_id))
+				dbf.db_delete(
+						database=ef.dbase,
+						table='offers',
+				        where='offer_id = {}'.format(offer_id))
 				dbf.db_update(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_price', 'offer_dt'],
 						values=[offer + 1, dt],
 						where='offer_id = {}'.format(last_id))
 				if offer + 1 == last_ab:
-					dbf.db_delete(table='autobids',
-					              where='autobid_id = {}'.format(iid))
+					dbf.db_delete(
+							database=ef.dbase,
+					        table='autobids',
+					        where='autobid_id = {}'.format(iid))
 
 				private = ("Offerta troppo bassa. Non hai superato" +
 				           " l'autobid di {}.".format(ab_user))
@@ -671,16 +728,20 @@ def check_offer_value(user, offer_id, player, dt):
 			# autobid dal db ed aggiorno tutti gli altri parametri
 			else:
 
-				dbf.db_delete(table='autobids',
-				              where='autobid_id = {}'.format(iid))
+				dbf.db_delete(
+						database=ef.dbase,
+						table='autobids',
+				        where='autobid_id = {}'.format(iid))
 
 				dbf.db_update(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_dt', 'offer_status'],
 						values=[dt, 'Winning'],
 						where='offer_id = {}'.format(offer_id))
 
 				dbf.db_update(
+						database=ef.dbase,
 						table='offers',
 						columns=['offer_status'],
 						values=['Lost'],
@@ -756,6 +817,7 @@ def confermo_autobid(bot, update):
 
 	# Decripto il valore impostato
 	new_id, pl, nonce, tag, encr_value = dbf.db_select(
+			database=ef.dbase,
 			table='autobids',
 			columns_out=['autobid_user', 'autobid_status'],
 			where=('autobid_user = "{}" '.format(user) +
@@ -792,6 +854,7 @@ def confermo_eliminazione(bot, update):
 	user = select_user(update)
 
 	ab_to_delete = dbf.db_select(
+			database=ef.dbase,
 			table='elimina',
 			columns_in=['elimina_ab'],
 			where='elimina_user = "{}"'.format(user))
@@ -799,11 +862,15 @@ def confermo_eliminazione(bot, update):
 		return bot.send_message(chat_id=chat_id,
 		                        text='Non hai autobid da eliminare.')
 
-	dbf.db_delete(table='autobids',
-	              where='autobid_id = {}'.format(ab_to_delete[0]))
+	dbf.db_delete(
+			database=ef.dbase,
+			table='autobids',
+	        where='autobid_id = {}'.format(ab_to_delete[0]))
 
-	dbf.db_delete(table='elimina',
-	              where='elimina_ab = {}'.format(ab_to_delete[0]))
+	dbf.db_delete(
+			database=ef.dbase,
+			table='elimina',
+	        where='elimina_ab = {}'.format(ab_to_delete[0]))
 
 	message = 'Autobid eliminato' + separ + crea_riepilogo_autobid(user)
 
@@ -846,6 +913,7 @@ def confermo_offerta(bot, update):
 	# Controllo che il calciatore sia svincolato
 	if non_svincolato(pl):
 		dbf.db_delete(
+				database=ef.dbase,
 				table='offers',
 				where=('offer_user = "{}" AND '.format(user) +
 				       'offer_status IS NULL'))
@@ -856,6 +924,7 @@ def confermo_offerta(bot, update):
 	# Controllo che non si tratti di autorilancio
 	if autorilancio(user, pl):
 		dbf.db_delete(
+				database=ef.dbase,
 				table='offers',
 				where=('offer_user = "{}" AND '.format(user) +
 				       'offer_status IS NULL'))
@@ -871,6 +940,7 @@ def confermo_offerta(bot, update):
 		# Elimino eventuali offerte non confermate da altri user per lo stesso
 		# calciatore
 		dbf.db_delete(
+				database=ef.dbase,
 				table='offers',
 				where='offer_player = "{}"'.format(pl) +
 				      'AND offer_status IS NULL AND ' +
@@ -912,6 +982,7 @@ def confermo_pagamento(bot, update):
 	# Controllo ci sia il pagamento e, se sì, lo seleziono.
 	try:
 		pay_id, pl, pr, mn = dbf.db_select(
+				database=ef.dbase,
 				table='pays',
 				columns_in=['pay_id', 'pay_player', 'pay_price', 'pay_money'],
 				where='pay_user = "{}" AND pay_status IS NULL'.
@@ -932,6 +1003,7 @@ def confermo_pagamento(bot, update):
 
 	if temp_bud < pr:
 		dbf.db_delete(
+				database=ef.dbase,
 				table='pays',
 				where='pay_user = "{}" AND pay_player = "{}"'.format(user, pl))
 		return bot.send_message(chat_id=chat_id,
@@ -942,6 +1014,7 @@ def confermo_pagamento(bot, update):
 	# Sommo al budget della fantasquadra il prezzo dei giocatori utilizzati
 	# nel pagamento, se presenti, e che saranno quindi ceduti
 	budget = dbf.db_select(
+			database=ef.dbase,
 			table='budgets',
 			columns_in=['budget_value'],
 			where='budget_team = "{}"'.format(user))[0]
@@ -952,6 +1025,7 @@ def confermo_pagamento(bot, update):
 			int(i)
 		except ValueError:
 			new_budget += dbf.db_select(
+					database=ef.dbase,
 					table='players',
 					columns_in=['player_price'],
 					where='player_name = "{}"'.format(i.split(' (')[0]))[0]
@@ -960,24 +1034,28 @@ def confermo_pagamento(bot, update):
 	# calciatore acquistato che di quelli ceduti, se presenti
 	if new_budget < pr:
 		dbf.db_delete(
+				database=ef.dbase,
 				table='pays',
 				where='pay_user = "{}" AND pay_player = "{}"'.format(user, pl))
 		return bot.send_message(chat_id=chat_id,
 		                        text='Budget insufficiente')
 	else:
 		dbf.db_update(
+				database=ef.dbase,
 				table='budgets',
 				columns=['budget_value'],
 				values=[new_budget - pr],
 				where='budget_team = "{}"'.format(user))
 
 		dbf.db_update(
+				database=ef.dbase,
 				table='players',
 				columns=['player_status'],
 				values=[user],
 				where='player_name = "{}"'.format(pl))
 
 		dbf.db_update(
+				database=ef.dbase,
 				table='offers',
 				columns=['offer_status'],
 				values=['Official'],
@@ -986,6 +1064,7 @@ def confermo_pagamento(bot, update):
 
 		dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 		dbf.db_update(
+				database=ef.dbase,
 				table='pays',
 				columns=['pay_dt', 'pay_status'],
 				values=[dt, 'Confirmed'],
@@ -996,6 +1075,7 @@ def confermo_pagamento(bot, update):
 				int(i)
 			except ValueError:
 				dbf.db_update(
+						database=ef.dbase,
 						table='players',
 						columns=['player_status'],
 						values=['FREE'],
@@ -1019,7 +1099,7 @@ def confermo_pagamento(bot, update):
 	bot.send_message(parse_mode='HTML', chat_id=group_id,
 	                 text=(message + separ + crea_riepilogo(dt)))
 
-	# sf.aggiorna_rosa_online(user, (pl, pr), mn)
+	sf.aggiorna_rosa_online(user, (pl, pr), mn)
 
 
 def crea_riepilogo(dt_now):
@@ -1068,6 +1148,7 @@ def crea_riepilogo_autobid(user):
 	"""
 
 	autobids = dbf.db_select(
+			database=ef.dbase,
 			table='autobids',
 			columns_out=['autobid_id', 'autobid_user', 'autobid_status'],
 			where=('autobid_user = "{}" AND '.format(user) +
@@ -1106,11 +1187,13 @@ def elimino_autobid(bot, update, args):
 
 	# Elimino tutte le proposte di cancellazione non confermate dall'user
 	dbf.db_delete(
+			database=ef.dbase,
 			table='elimina',
 			where='elimina_user = "{}"'.format(user))
 
 	# Seleziono tutti gli autobids dell'user
 	autobids = dbf.db_select(
+			database=ef.dbase,
 			table='autobids',
 			columns_in=['autobid_player'],
 			where='autobid_user = "{}"'.format(user))
@@ -1131,12 +1214,14 @@ def elimino_autobid(bot, update, args):
 		                        text='Giocatore non riconosciuto.')
 
 	ab = dbf.db_select(
+			database=ef.dbase,
 			table='autobids',
 			columns_in=['autobid_id'],
 			where=('autobid_user = "{}" AND '.format(user) +
 			       'autobid_player = "{}"'.format(jpl)))[0]
 
 	dbf.db_insert(
+			database=ef.dbase,
 			table='elimina',
 			columns=['elimina_ab', 'elimina_user'],
 			values=[ab, user])
@@ -1230,6 +1315,7 @@ def message_with_offers(list_of_offers, shift, dt_now, msg):
 
 	for _, tm, pl, pr, dt in list_of_offers:
 		team, roles = dbf.db_select(
+				database=ef.dbase,
 				table='players',
 				columns_in=['player_team', 'player_roles'],
 				where='player_name = "{}"'.format(pl))[0]
@@ -1269,6 +1355,7 @@ def message_with_payment(user, acquisto, pagamento):
 	jpl = ef.jaccard_result(
 			acquisto,
 			dbf.db_select(
+					database=ef.dbase,
 					table='offers',
 					columns_in=['offer_player'],
 					where=('offer_user = "{}" AND '.format(user) +
@@ -1278,6 +1365,7 @@ def message_with_payment(user, acquisto, pagamento):
 				"Controlla che l'asta sia conclusa e che tu l'abbia vinta.")
 
 	rosa = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_name'],
 			where='player_status = "{}"'.format(user))
@@ -1294,6 +1382,7 @@ def message_with_payment(user, acquisto, pagamento):
 				        'rosa: {}'.format(pl))
 
 			tm, rls, pr = dbf.db_select(
+					database=ef.dbase,
 					table='players',
 					columns_in=['player_team', 'player_roles',
 					            'player_price'],
@@ -1310,18 +1399,21 @@ def message_with_payment(user, acquisto, pagamento):
 
 	# Gestisco prima tutta la parte relativa all'acquisto
 	off_id, price = dbf.db_select(
+			database=ef.dbase,
 			table='offers',
 			columns_in=['offer_id', 'offer_price'],
 			where=('offer_player = "{}" AND '.format(jpl) +
 			       'offer_status = "Not Official"'))[0]
 
 	dbf.db_insert(
+			database=ef.dbase,
 			table='pays',
 			columns=['pay_user', 'pay_offer',
 			         'pay_player', 'pay_price'],
 			values=[user, off_id, jpl, price])
 
 	team, roles = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_team', 'player_roles'],
 			where='player_name = "{}"'.format(jpl))[0]
@@ -1360,6 +1452,7 @@ def non_svincolato(player):
 	"""
 
 	status = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_status'],
 			where='player_name = "{}"'.format(player))[0]
@@ -1397,6 +1490,7 @@ def offro(bot, update, args):
 
 	# Elimino dal db tutte le offerte precedenti non confermate dall'utente
 	dbf.db_delete(
+			database=ef.dbase,
 			table='offers',
 			where='offer_user = "{}" '.format(user) +
 				  'AND offer_status IS NULL')
@@ -1410,16 +1504,19 @@ def offro(bot, update, args):
 
 	# Aggiorno il db con i parametri che mancano
 	pl_id = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_id'],
 			where='player_name = "{}"'.format(pl))[0]
 
 	team, roles, price = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_team', 'player_roles', 'player_price'],
 			where='player_name = "{}"'.format(pl))[0]
 
 	dbf.db_insert(
+			database=ef.dbase,
 			table='offers',
 			columns=['offer_user', 'offer_player', 'offer_player_id',
 			         'offer_price'],
@@ -1448,6 +1545,7 @@ def order_by_role(user):
 	              'W': 6, 'T': 6, 'A': 7, 'Pc': 7}
 
 	rosa = dbf.db_select(
+			database=ef.dbase,
 			table='players',
 			columns_in=['player_name', 'player_team', 'player_roles'],
 			where='player_status = "{}"'.format(user))
@@ -1485,6 +1583,7 @@ def pago(bot, update, args):
 
 	# Elimino dal db tutte i pagamenti precedenti non confermati dall'utente
 	dbf.db_delete(
+			database=ef.dbase,
 			table='pays',
 			where='pay_user = "{}" AND pay_status IS NULL'.format(user))
 
@@ -1504,6 +1603,7 @@ def pago(bot, update, args):
 		money_db, message = result
 
 	dbf.db_update(
+			database=ef.dbase,
 			table='pays',
 			columns=['pay_money'],
 			values=[money_db],
@@ -1540,14 +1640,17 @@ def prezzo(bot, update, args):
 	pl, tm = args
 
 	tm = ef.jaccard_result(
-			tm, dbf.db_select(table='players',
-			                  columns_in=['player_team']), 3)
+			tm, dbf.db_select(
+					database=ef.dbase,
+					table='players',
+			        columns_in=['player_team']), 3)
 	if not tm:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Squadra non riconosciuta, riprova.')
 
 	pl = ef.jaccard_result(pl,
 	                       dbf.db_select(
+			                       database=ef.dbase,
 			                       table='players',
 			                       columns_in=['player_name'],
 	                               where='player_team = "{}"'.format(tm)), 3)
@@ -1556,6 +1659,7 @@ def prezzo(bot, update, args):
 		                        text='Calciatore non riconosciuto, riprova.')
 
 	rl, pr, st = dbf.db_select(
+			database=ef.dbase,
 			table='players',
             columns_in=['player_roles', 'player_price', 'player_status'],
 			where='player_name = "{}"'.format(pl))[0]
@@ -1592,12 +1696,14 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 	if active:
 
 		pl_id, pr_base = dbf.db_select(
+				database=ef.dbase,
 				table='players',
 				columns_in=['player_id', 'player_price'],
 				where='player_name = "{}"'.format(player_name))[0]
 
 		if autobid_value < pr_base:
 			dbf.db_delete(
+					database=ef.dbase,
 					table='autobids',
 					where='autobid_id = {}'.format(ab_id))
 
@@ -1607,12 +1713,14 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 		dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 		dbf.db_insert(
+				database=ef.dbase,
 				table='offers',
 				columns=['offer_user', 'offer_player', 'offer_player_id',
 				         'offer_price', 'offer_dt', 'offer_status'],
 				values=[user, player_name, pl_id, pr_base, dt, 'Winning'])
 
 		dbf.db_update(
+				database=ef.dbase,
 				table='autobids',
 				columns=['autobid_status'],
 				values=['Confirmed'],
@@ -1628,6 +1736,7 @@ def prezzo_base_automatico(user, ab_id, player_name, autobid_value, active):
 
 	else:
 		dbf.db_delete(
+				database=ef.dbase,
 				table='autobids',
 				where='autobid_id = {}'.format(ab_id))
 
@@ -1662,6 +1771,7 @@ def print_rosa(bot, update):
 		message += '\n\t\t\t<b>{}</b> ({})     {}'.format(pl, tm, rl)
 
 	budget = dbf.db_select(
+			database=ef.dbase,
 			table='budgets',
 			columns_in=['budget_value'],
 			where='budget_team = "{}"'.format(user))[0]
@@ -1736,6 +1846,7 @@ def select_offer_to_confirm(user):
 
 	try:
 		of_id, pl = dbf.db_select(
+				database=ef.dbase,
 				table='offers',
 				columns_in=['offer_id', 'offer_player'],
 				where='offer_user = "{}" AND offer_dt IS NULL'.
@@ -1760,6 +1871,7 @@ def select_user(update):
 	"""
 
 	return dbf.db_select(
+			database=ef.dbase,
 			table='teams',
 			columns_in=['team_name'],
 			where='team_member = "{}"'.
@@ -1783,6 +1895,7 @@ def ufficiali(bot, update):
 	message = 'Ufficializzazioni:\n'
 
 	uffic = dbf.db_select(
+			database=ef.dbase,
 			table='offers',
 			columns_in=['offer_id', 'offer_user',
 			            'offer_player', 'offer_price'],
@@ -1791,11 +1904,13 @@ def ufficiali(bot, update):
 	for off_id, user, pl, pr in uffic:
 
 		tm = dbf.db_select(
+				database=ef.dbase,
 				table='players',
 				columns_in=['player_team'],
 				where='player_name = "{}"'.format(pl))[0]
 
 		pagamento = dbf.db_select(
+				database=ef.dbase,
 				table='pays',
 				columns_in=['pay_money'],
 				where='pay_offer = {}'.format(off_id))[0]
