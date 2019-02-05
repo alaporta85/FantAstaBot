@@ -1547,12 +1547,13 @@ def order_by_role(user):
 	rosa = dbf.db_select(
 			database=ef.dbase,
 			table='players',
-			columns_in=['player_name', 'player_team', 'player_roles'],
+			columns_in=['player_name', 'player_team',
+			            'player_roles', 'player_price'],
 			where='player_status = "{}"'.format(user))
 
-	rosa = [(el[0], el[1], el[2], roles_dict[el[2].split(';')[0]]) for
+	rosa = [(el[0], el[1], el[2], el[3], roles_dict[el[2].split(';')[0]]) for
 	        el in rosa]
-	rosa.sort(key=lambda x: x[3])
+	rosa.sort(key=lambda x: x[4])
 
 	rosa = [el[:-1] for el in rosa]
 
@@ -1767,8 +1768,9 @@ def print_rosa(bot, update):
 
 	rosa = order_by_role(user)
 
-	for pl, tm, rl in rosa:
-		message += '\n\t\t\t<b>{}</b> ({})     {}'.format(pl, tm, rl)
+	for pl, tm, rl, pr in rosa:
+		line = '\n\t\t\t<b>{}</b> ({})   {}     {}'.format(pl, tm, rl, pr)
+		message += line
 
 	budget = dbf.db_select(
 			database=ef.dbase,
