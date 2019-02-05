@@ -12,7 +12,7 @@ dispatcher = updater.dispatcher
 
 # True durante il debugging, reindirizza a Testazza tutti i messaggi
 # solitamente mandati al gruppo
-BLOCK = True
+BLOCK = False
 fanta_id = -318148079
 polps_id = 67507055
 
@@ -1099,7 +1099,7 @@ def confermo_pagamento(bot, update):
 	bot.send_message(parse_mode='HTML', chat_id=group_id,
 	                 text=(message + separ + crea_riepilogo(dt)))
 
-	sf.aggiorna_rosa_online(user, (pl, pr), mn)
+	# sf.aggiorna_rosa_online(user, (pl, pr), mn)
 
 
 def crea_riepilogo(dt_now):
