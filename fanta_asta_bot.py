@@ -1890,6 +1890,8 @@ def ufficiali(bot, update):
 	"""
 
 	chat_id = update.message.chat_id
+	uffic2print = 40
+
 	if chat_id == fanta_id:
 		return bot.send_message(chat_id=chat_id,
 		                        text='Utilizza la chat privata')
@@ -1902,6 +1904,9 @@ def ufficiali(bot, update):
 			columns_in=['offer_id', 'offer_user',
 			            'offer_player', 'offer_price'],
 			where='offer_status = "Official"')
+
+	if len(uffic) > uffic2print:
+		uffic = uffic[-uffic2print:]
 
 	for off_id, user, pl, pr in uffic:
 
