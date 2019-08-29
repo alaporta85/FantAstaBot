@@ -6,7 +6,7 @@ from nltk.metrics.distance import jaccard_distance
 from nltk.util import ngrams
 
 
-anno = '2018-2019'
+anno = '2019-2020'
 dbase = 'fanta_asta_db.db'
 
 
@@ -174,7 +174,7 @@ def quotazioni_iniziali():
 				table='players',
 				columns=['player_name', 'player_team',
 				         'player_roles', 'player_price'],
-				values=[name, team[:3].upper(), role, price])
+				values=[name, team[:3].upper(), role, int(price)])
 
 	del players
 
