@@ -130,7 +130,7 @@ def jaccard_result(input_option, all_options, ngrm):
 
 	"""
 
-	input_option = input_option.upper()
+	input_option = input_option.upper().replace(' ', '')
 	dist = 1
 	tri_guess = set(ngrams(input_option, ngrm))
 	jac_res = ''
