@@ -208,13 +208,27 @@ def db_insert(database, table, columns, values):
 
     db, c = start_db(database)
 
-    cols = ', '.join(columns)
-    vals = ', '.join([f'"{v}"' for v in values])
-    query = f'INSERT INTO {table} ({cols}) VALUES ({vals})'
+    query = ('''INSERT INTO {} ({}) VALUES ({})'''.format(
+            table,
+            ', '.join(columns),
+            ', '.join(['?' for i in values])))
 
-    c.execute(query)
+    c.execute(query, tuple(values))
+
     db.commit()
     db.close()
+
+    # db, c = start_db(database)
+    #
+    # cols = ', '.join(columns)
+    # # vals = ', '.join([f'"{v}"' for v in values])
+    # # vals = ', '.join([f'"{v}"' if type(v) != bytes else f'{v}' for v in values])
+    # vals = ', '.join(['"{}"'.format(v) if type(v) != bytes else '{}'.format(v) for v in values])
+    # query = 'INSERT INTO {} ({}) VALUES ({})'.format(table, cols, vals)
+    #
+    # c.execute(query)
+    # db.commit()
+    # db.close()
 
 
 def db_update(database, table, columns, values, where):
