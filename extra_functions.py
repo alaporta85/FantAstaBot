@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 import db_functions as dbf
 from pandas import ExcelWriter
 from nltk.metrics.distance import jaccard_distance
@@ -30,7 +31,7 @@ def aggiorna_db_con_nuove_quotazioni():
 
 	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
 	pls_in_db = dbf.db_select(database=dbase, table='players',
-	                          columns_in=['player_name'])
+							  columns_in=['player_name'])
 
 	for x in range(len(players)):
 		role, pl, team, price = players.iloc[x].values
@@ -47,7 +48,7 @@ def aggiorna_db_con_nuove_quotazioni():
 					database=dbase,
 					table='players',
 					columns=['player_name', 'player_team',
-					         'player_roles', 'player_price', 'player_status'],
+							 'player_roles', 'player_price', 'player_status'],
 					values=[pl, team[:3].upper(), role, int(price), 'FREE'])
 
 	del players
@@ -63,7 +64,7 @@ def aggiorna_status_calciatori():
 	"""
 
 	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
-	                     sheet_name="Foglio1-1", usecols=range(0, 24, 3))
+						 sheet_name="Foglio1-1", usecols=range(0, 24, 3))
 
 	for team in asta.columns:
 		pls = asta[team].dropna()
@@ -91,7 +92,7 @@ def correggi_file_asta():
 	"""
 
 	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
-	                     header=0, sheet_name="Foglio1")
+						 header=0, sheet_name="Foglio1")
 	players = dbf.db_select(
 			database=dbase,
 			table='players',
@@ -106,7 +107,7 @@ def correggi_file_asta():
 			names = flt_df['player_name'].values
 			correct_pl = jaccard_result(pl, names, 3)
 			asta.loc[j, [asta.columns[i],
-			             asta.columns[i+1]]] = correct_pl, tm.upper()
+						 asta.columns[i+1]]] = correct_pl, tm.upper()
 
 	writer = ExcelWriter('Asta{}_2.xlsx'.format(anno), engine='openpyxl')
 	asta.to_excel(writer, sheet_name='Foglio1')
@@ -114,44 +115,31 @@ def correggi_file_asta():
 	writer.close()
 
 
-def jaccard_result(input_option, all_options, ngrm):
+def jaccard_result(in_opt, all_opt, ngrm):
 
 	"""
-	Trova il valore esatto corrispondente a quello inserito dall'user.
+	Fix user input.
 
-	:param input_option: str
-
-	:param all_options: list of str
-
-	:param ngrm: int, lunghezza degli ngrammi
-
+	:param in_opt: str
+	:param all_opt: list
+	:param ngrm: int, ngrams length
 
 	:return jac_res: str
 
 	"""
 
-	input_option = input_option.upper().replace(' ', '')
-	dist = 1
-	tri_guess = set(ngrams(input_option, ngrm))
-	jac_res = ''
+	in_opt = in_opt.lower().replace(' ', '')
+	n_in = set(ngrams(in_opt, ngrm))
 
-	for opt in all_options:
-		p = opt.upper().replace(' ', '')
-		trit = set(ngrams(p, ngrm))
-		jd = jaccard_distance(tri_guess, trit)
-		if not jd:
-			return opt
-		elif jd < dist:
-			dist = jd
-			jac_res = opt
+	out_opts = [pl.lower().replace(' ', '') for pl in all_opt]
+	n_outs = [set(ngrams(pl, ngrm)) for pl in out_opts]
 
-	if not jac_res and ngrm > 2:
-		return jaccard_result(input_option, all_options, ngrm - 1)
+	distances = [jaccard_distance(n_in, n_out) for n_out in n_outs]
 
-	elif not jac_res and ngrm == 2:
-		return False
-
-	return jac_res
+	if len(set(distances)) == 1:
+		return jaccard_result(in_opt, all_opt, ngrm-1) if ngrm > 2 else False
+	else:
+		return all_opt[np.argmin(distances)]
 
 
 def quotazioni_iniziali():
@@ -165,7 +153,7 @@ def quotazioni_iniziali():
 	dbf.empty_table(database=dbase, table='players')
 
 	players = pd.read_excel(os.getcwd() + '/Quotazioni.xlsx',
-	                        sheet_name="Tutti", usecols=[1, 2, 3, 4])
+							sheet_name="Tutti", usecols=[1, 2, 3, 4])
 
 	for i in range(len(players)):
 		role, name, team, price = players.iloc[i].values
@@ -173,7 +161,7 @@ def quotazioni_iniziali():
 				database=dbase,
 				table='players',
 				columns=['player_name', 'player_team',
-				         'player_roles', 'player_price'],
+						 'player_roles', 'player_price'],
 				values=[name, team[:3].upper(), role, int(price)])
 
 	del players

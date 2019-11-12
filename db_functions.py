@@ -6,30 +6,6 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 
-def db_delete(database, table, where):
-
-    """
-    Delete row from table.
-
-    :param database: .db object
-
-    :param table: str
-
-    :param where: str
-
-
-    :return: Nothing
-
-    """
-
-    db, c = start_db(database)
-
-    c.execute('''DELETE FROM {} WHERE {}'''.format(table, where))
-
-    db.commit()
-    db.close()
-
-
 def decrypt_value(nonce, tag, encrypted_text):
 
     """
@@ -74,40 +50,6 @@ def encrypt_value(value):
     return cipher.nonce, tag, ciphertext
 
 
-def db_insert(database, table, columns, values):
-
-    """
-    Insert a new row in the table assigning the specifies values to the
-    specified columns. If last_row=True, return the id of the inserted row.
-
-    :param database: .db object
-
-    :param table: str, name of the table
-
-    :param columns: list, each element of the list is a column of the table.
-                    Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
-                    in the list will be loaded.
-
-    :param values: list, values of the corresponding columns
-
-
-    :return: int if last_row=True else nothing.
-
-    """
-
-    db, c = start_db(database)
-
-    query = ('''INSERT INTO {} ({}) VALUES ({})'''.format(
-            table,
-            ', '.join(columns),
-            ', '.join(['?' for i in values])))
-
-    c.execute(query, tuple(values))
-
-    db.commit()
-    db.close()
-
-
 def db_select(database, table, columns_in=None, columns_out=None,
               where=None, dataframe=False):
 
@@ -115,21 +57,15 @@ def db_select(database, table, columns_in=None, columns_out=None,
     Return content from a specific table of the database.
 
     :param database: .db object
-
     :param table: str, name of the table
-
     :param columns_in: list, each element of the list is a column of the table.
                        Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
                        in the list will be loaded.
-
     :param columns_out: list, each element of the list is a column of the
                         table. Ex: ['pred_label']. Each column in the list will
                         not be loaded.
-
     :param where: str, condition. Ex: 'pred_label == WINNING'
-
     :param dataframe: bool
-
 
     :return: Dataframe if dataframe=True else list of tuples.
     """
@@ -180,60 +116,34 @@ def db_select(database, table, columns_in=None, columns_out=None,
             return res2
 
 
-def db_update(database, table, columns, values, where):
-
-    """
-    Update values in the table assigning the specifies values to the
-    specified columns.
-
-    :param database: .db object
-
-    :param table: str, name of the table
-
-    :param columns: list, each element of the list is a column of the table.
-                    Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
-                    in the list will be loaded.
-
-    :param values: list, values of the corresponding columns
-
-    :param where: str, condition
-
-
-    :return: Nothing
-    """
-
-    db, c = start_db(database)
-
-    query = ('''UPDATE {} SET {} WHERE {}'''.format(
-            table,
-            ', '.join([i + ' = ?' for i in columns]),
-            where))
-
-    c.execute(query, tuple(values))
-
-    db.commit()
-    db.close()
-
-
-def empty_table(database, table):
-
-    """
-    Called inside fill_db_with_quotes.
-
-    :param database: .db object
-
-    :param table: str
-
-
-    :return: Nothing
-    """
-
-    db, c = start_db(database)
-
-    c.execute('''DELETE FROM {}'''.format(table))
-
-    db.commit()
-    db.close()
+# def db_select(table, columns, where=None):
+#
+#     """
+#     Return content from a specific table of the database.
+#
+#     :param table: str, name of the table
+#     :param columns: list, each element of the list is a column of the table.
+#     :param where: str, condition
+#
+#     :return: list of tuples or list of elements
+#
+#     """
+#
+#     db, c = start_db()
+#
+#     cols = ', '.join(columns)
+#     if where:
+#         query = f'SELECT {cols} FROM {table} WHERE {where}'
+#     else:
+#         query = f'SELECT {cols} FROM {table}'
+#
+#     content = list(c.execute(query))
+#     db.close()
+#
+#     if len(columns) == 1 and columns[0] != '*':
+#         content = [el[0] for el in content if el[0]]
+#
+#     return content
 
 
 def start_db(database):
@@ -243,3 +153,88 @@ def start_db(database):
     c.execute("PRAGMA foreign_keys = ON")
 
     return db, c
+
+
+def empty_table(database, table):
+
+    """
+    Delete everything from table.
+
+    :param database: str
+    :param table: str
+
+    """
+
+    db, c = start_db(database)
+
+    query = f'DELETE FROM {table}'
+
+    c.execute(query)
+    db.commit()
+    db.close()
+
+
+def db_delete(database, table, where):
+
+    """
+    Remove entry from database.
+
+    :param database: str
+    :param table: str
+    :param where: str
+
+    """
+
+    db, c = start_db(database)
+
+    query = f'DELETE FROM {table} WHERE {where}'
+
+    c.execute(query)
+    db.commit()
+    db.close()
+
+
+def db_insert(database, table, columns, values):
+
+    """
+    Insert a new row in the table.
+
+    :param database: str
+    :param table: str, name of the table
+    :param columns: list, each element of the list is a column of the table.
+    :param values: list, values of the corresponding columns
+
+    """
+
+    db, c = start_db(database)
+
+    cols = ', '.join(columns)
+    vals = ', '.join([f'"{v}"' for v in values])
+    query = f'INSERT INTO {table} ({cols}) VALUES ({vals})'
+
+    c.execute(query)
+    db.commit()
+    db.close()
+
+
+def db_update(database, table, columns, values, where):
+
+    """
+    Update values in the table.
+
+    :param database: str
+    :param table: str, name of the table
+    :param columns: list, each element of the list is a column of the table.
+    :param values: list, values of the corresponding columns
+    :param where: str, condition
+
+    """
+
+    db, c = start_db(database)
+
+    vals = ', '.join([f'{c}="{v}"' for c, v in zip(columns, values)])
+    query = f'UPDATE {table} SET {vals} WHERE {where}'
+
+    c.execute(query)
+    db.commit()
+    db.close()
