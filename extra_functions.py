@@ -136,7 +136,7 @@ def jaccard_result(in_opt, all_opt, ngrm):
 
 	distances = [jaccard_distance(n_in, n_out) for n_out in n_outs]
 
-	if len(set(distances)) == 1:
+	if len(set(distances)) == 1 and distances[0] == 1:
 		return jaccard_result(in_opt, all_opt, ngrm-1) if ngrm > 2 else False
 	else:
 		return all_opt[np.argmin(distances)]
