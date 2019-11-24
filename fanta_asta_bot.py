@@ -12,7 +12,7 @@ dispatcher = updater.dispatcher
 
 # True durante il debugging, reindirizza a Testazza tutti i messaggi
 # solitamente mandati al gruppo
-BLOCK = False
+BLOCK = True
 fanta_id = -318148079
 polps_id = 67507055
 

@@ -9,15 +9,11 @@ pd.set_option('display.width', 1000)
 def decrypt_value(nonce, tag, encrypted_text):
 
     """
-    Decripta il valore dell'autobid.
-    Utilizzata all'interno di /conferma_autobid.
+    Decripta il valore dell'autobid. Usata all'interno di /conferma_autobid.
 
     :param nonce: bytes array
-
     :param tag: bytes array
-
     :param encrypted_text: bytes array
-
 
     :return: str, il valore dell'autobid decriptato
 
@@ -32,20 +28,18 @@ def decrypt_value(nonce, tag, encrypted_text):
 def encrypt_value(value):
 
     """
-    Cripta il valore dell'autobid.
-    Utilizzata all'interno di /autobid.
+    Cripta il valore dell'autobid. Utilizzata all'interno di /autobid.
 
     :param value: str, valore autobid. Ex. "35".
-
 
     :return: 3 bytes arrays
 
     """
 
-    bval = value.encode()
     key = open('key.txt', 'rb').readline()
     cipher = AES.new(key, AES.MODE_EAX)
-    ciphertext, tag = cipher.encrypt_and_digest(bval)
+    value2byte = value.encode()
+    ciphertext, tag = cipher.encrypt_and_digest(value2byte)
 
     return cipher.nonce, tag, ciphertext
 
@@ -208,27 +202,13 @@ def db_insert(database, table, columns, values):
 
     db, c = start_db(database)
 
-    query = ('''INSERT INTO {} ({}) VALUES ({})'''.format(
-            table,
-            ', '.join(columns),
-            ', '.join(['?' for i in values])))
+    cols = ', '.join(columns)
+    vals = ', '.join(['?' for _ in values])
+    query = f'INSERT INTO {table} ({cols}) VALUES ({vals})'
 
     c.execute(query, tuple(values))
-
     db.commit()
     db.close()
-
-    # db, c = start_db(database)
-    #
-    # cols = ', '.join(columns)
-    # # vals = ', '.join([f'"{v}"' for v in values])
-    # # vals = ', '.join([f'"{v}"' if type(v) != bytes else f'{v}' for v in values])
-    # vals = ', '.join(['"{}"'.format(v) if type(v) != bytes else '{}'.format(v) for v in values])
-    # query = 'INSERT INTO {} ({}) VALUES ({})'.format(table, cols, vals)
-    #
-    # c.execute(query)
-    # db.commit()
-    # db.close()
 
 
 def db_update(database, table, columns, values, where):
@@ -246,9 +226,9 @@ def db_update(database, table, columns, values, where):
 
     db, c = start_db(database)
 
-    vals = ', '.join([f'{c}="{v}"' for c, v in zip(columns, values)])
-    query = f'UPDATE {table} SET {vals} WHERE {where}'
+    cols = ', '.join([f'{c}=?' for c in columns])
+    query = f'UPDATE {table} SET {cols} WHERE {where}'
 
-    c.execute(query)
+    c.execute(query, tuple(values))
     db.commit()
     db.close()
