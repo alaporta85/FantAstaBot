@@ -30,8 +30,9 @@ def aggiorna_db_con_nuove_quotazioni():
 			last = name
 
 	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
-	pls_in_db = dbf.db_select(database=dbase, table='players',
-							  columns_in=['player_name'])
+	pls_in_db = dbf.db_select(database=dbase,
+	                          table='players',
+							  columns=['player_name'])
 
 	for x in range(len(players)):
 		role, pl, team, price = players.iloc[x].values
@@ -96,8 +97,9 @@ def correggi_file_asta():
 	players = dbf.db_select(
 			database=dbase,
 			table='players',
-			columns_in=['player_name', 'player_team'],
-			dataframe=True)
+			columns=['player_name', 'player_team'])
+
+	# TODO make df from players
 
 	for i in range(0, len(asta.columns), 3):
 		temp_pl = asta[asta.columns[i:i+3]].dropna()

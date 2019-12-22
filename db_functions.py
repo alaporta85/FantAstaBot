@@ -44,100 +44,101 @@ def encrypt_value(value):
     return cipher.nonce, tag, ciphertext
 
 
-def db_select(database, table, columns_in=None, columns_out=None,
-              where=None, dataframe=False):
-
-    """
-    Return content from a specific table of the database.
-
-    :param database: .db object
-    :param table: str, name of the table
-    :param columns_in: list, each element of the list is a column of the table.
-                       Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
-                       in the list will be loaded.
-    :param columns_out: list, each element of the list is a column of the
-                        table. Ex: ['pred_label']. Each column in the list will
-                        not be loaded.
-    :param where: str, condition. Ex: 'pred_label == WINNING'
-    :param dataframe: bool
-
-    :return: Dataframe if dataframe=True else list of tuples.
-    """
-
-    db, c = start_db(database)
-
-    if where:
-        cursor = c.execute('''SELECT * FROM {} WHERE {}'''.format(table,
-                                                                  where))
-    else:
-        cursor = c.execute('''SELECT * FROM {}'''.format(table))
-
-    cols = [el[0] for el in cursor.description]
-
-    df = pd.DataFrame(list(cursor), columns=cols)
-    db.close()
-
-    if not len(df):
-        return []
-
-    if columns_in:
-        cols = [el for el in cols if el in columns_in]
-        df = df[cols]
-
-    elif columns_out:
-        cols = [el for el in cols if el not in columns_out]
-        df = df[cols]
-
-    if dataframe:
-        return df
-    else:
-        if len(cols) == 1:
-            res = [df.loc[i, cols[0]] for i in range(len(df))]
-            res = sorted(set(res), key=lambda x: res.index(x))
-            res = [int(i) if type(i) == np.int64 else i for i in res]
-            return res
-        else:
-            res = [tuple(df.iloc[i]) for i in range(len(df))]
-            res2 = []
-            for i in res:
-                temp = []
-                for j in i:
-                    if type(j) == np.int64:
-                        temp.append(int(j))
-                    else:
-                        temp.append(j)
-                res2.append(tuple(temp))
-            return res2
-
-
-# def db_select(table, columns, where=None):
+# def db_select(database, table, columns_in=None, columns_out=None,
+#               where=None, dataframe=False):
 #
 #     """
 #     Return content from a specific table of the database.
 #
+#     :param database: .db object
 #     :param table: str, name of the table
-#     :param columns: list, each element of the list is a column of the table.
-#     :param where: str, condition
+#     :param columns_in: list, each element of the list is a column of the table.
+#                        Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
+#                        in the list will be loaded.
+#     :param columns_out: list, each element of the list is a column of the
+#                         table. Ex: ['pred_label']. Each column in the list will
+#                         not be loaded.
+#     :param where: str, condition. Ex: 'pred_label == WINNING'
+#     :param dataframe: bool
 #
-#     :return: list of tuples or list of elements
-#
+#     :return: Dataframe if dataframe=True else list of tuples.
 #     """
 #
-#     db, c = start_db()
+#     db, c = start_db(database)
 #
-#     cols = ', '.join(columns)
 #     if where:
-#         query = f'SELECT {cols} FROM {table} WHERE {where}'
+#         cursor = c.execute('''SELECT * FROM {} WHERE {}'''.format(table,
+#                                                                   where))
 #     else:
-#         query = f'SELECT {cols} FROM {table}'
+#         cursor = c.execute('''SELECT * FROM {}'''.format(table))
 #
-#     content = list(c.execute(query))
+#     cols = [el[0] for el in cursor.description]
+#
+#     df = pd.DataFrame(list(cursor), columns=cols)
 #     db.close()
 #
-#     if len(columns) == 1 and columns[0] != '*':
-#         content = [el[0] for el in content if el[0]]
+#     if not len(df):
+#         return []
 #
-#     return content
+#     if columns_in:
+#         cols = [el for el in cols if el in columns_in]
+#         df = df[cols]
+#
+#     elif columns_out:
+#         cols = [el for el in cols if el not in columns_out]
+#         df = df[cols]
+#
+#     if dataframe:
+#         return df
+#     else:
+#         if len(cols) == 1:
+#             res = [df.loc[i, cols[0]] for i in range(len(df))]
+#             res = sorted(set(res), key=lambda x: res.index(x))
+#             res = [int(i) if type(i) == np.int64 else i for i in res]
+#             return res
+#         else:
+#             res = [tuple(df.iloc[i]) for i in range(len(df))]
+#             res2 = []
+#             for i in res:
+#                 temp = []
+#                 for j in i:
+#                     if type(j) == np.int64:
+#                         temp.append(int(j))
+#                     else:
+#                         temp.append(j)
+#                 res2.append(tuple(temp))
+#             return res2
+
+
+def db_select(database, table, columns, where=None):
+
+    """
+    Return content from a specific table of the database.
+
+    :param database: str
+    :param table: str, name of the table
+    :param columns: list, each element of the list is a column of the table.
+    :param where: str, condition
+
+    :return: list of tuples or list of elements
+
+    """
+
+    db, c = start_db(database)
+
+    cols = ', '.join(columns)
+    if where:
+        query = f'SELECT {cols} FROM {table} WHERE {where}'
+    else:
+        query = f'SELECT {cols} FROM {table}'
+
+    content = list(c.execute(query))
+    db.close()
+
+    if len(columns) == 1 and columns[0] != '*':
+        content = [el[0] for el in content if el[0]]
+
+    return content
 
 
 def start_db(database):
