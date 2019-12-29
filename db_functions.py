@@ -1,6 +1,5 @@
 import sqlite3
 import pandas as pd
-import numpy as np
 from Cryptodome.Cipher import AES
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
