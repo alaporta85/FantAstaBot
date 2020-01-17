@@ -44,6 +44,13 @@ def aggiorna_db_con_nuove_quotazioni():
 					columns=['player_team', 'player_price'],
 					values=[team[:3].upper(), int(price)],
 					where='player_name = "{}"'.format(pl))
+
+			dbf.db_update(
+					database=dbase,
+					table='stats',
+					columns=['team', 'price'],
+					values=[team[:3].upper(), int(price)],
+					where='name = "{}"'.format(pl))
 		else:
 			dbf.db_insert(
 					database=dbase,
@@ -51,6 +58,14 @@ def aggiorna_db_con_nuove_quotazioni():
 					columns=['player_name', 'player_team',
 							 'player_roles', 'player_price', 'player_status'],
 					values=[pl, team[:3].upper(), role, int(price), 'FREE'])
+
+			dbf.db_insert(
+					database=dbase,
+					table='stats',
+					columns=['name', 'team', 'roles', 'status', 'mv', 'mfv',
+					         'regular', 'going_in', 'going_out', 'price'],
+					values=[pl, team[:3].upper(), role, 'FREE', 0, 0,
+					        0, 0, 0, int(price)])
 
 	del players
 

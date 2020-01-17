@@ -1047,6 +1047,13 @@ def confermo_pagamento(bot, update):
 
 		dbf.db_update(
 				database=ef.dbase,
+				table='stats',
+				columns=['status'],
+				values=[user],
+				where=f'name = "{pl}"')
+
+		dbf.db_update(
+				database=ef.dbase,
 				table='offers',
 				columns=['offer_status'],
 				values=['Official'],
@@ -1072,6 +1079,13 @@ def confermo_pagamento(bot, update):
 						columns=['player_status'],
 						values=['FREE'],
 						where=f'player_name = "{player}"')
+
+				dbf.db_update(
+						database=ef.dbase,
+						table='stats',
+						columns=['status'],
+						values=['FREE'],
+						where=f'name = "{player}"')
 
 	message = (f'<i>{user}</i> ha ufficializzato ' +
 	           f'<b>{pl}</b> a {pr}.\nPagamento: {", ".join(mn)}\n')
