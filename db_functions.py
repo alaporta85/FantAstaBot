@@ -43,78 +43,11 @@ def encrypt_value(value):
     return cipher.nonce, tag, ciphertext
 
 
-# def db_select(database, table, columns_in=None, columns_out=None,
-#               where=None, dataframe=False):
-#
-#     """
-#     Return content from a specific table of the database.
-#
-#     :param database: .db object
-#     :param table: str, name of the table
-#     :param columns_in: list, each element of the list is a column of the table.
-#                        Ex: ['pred_id', 'pred_user', 'pred_quote']. Each column
-#                        in the list will be loaded.
-#     :param columns_out: list, each element of the list is a column of the
-#                         table. Ex: ['pred_label']. Each column in the list will
-#                         not be loaded.
-#     :param where: str, condition. Ex: 'pred_label == WINNING'
-#     :param dataframe: bool
-#
-#     :return: Dataframe if dataframe=True else list of tuples.
-#     """
-#
-#     db, c = start_db(database)
-#
-#     if where:
-#         cursor = c.execute('''SELECT * FROM {} WHERE {}'''.format(table,
-#                                                                   where))
-#     else:
-#         cursor = c.execute('''SELECT * FROM {}'''.format(table))
-#
-#     cols = [el[0] for el in cursor.description]
-#
-#     df = pd.DataFrame(list(cursor), columns=cols)
-#     db.close()
-#
-#     if not len(df):
-#         return []
-#
-#     if columns_in:
-#         cols = [el for el in cols if el in columns_in]
-#         df = df[cols]
-#
-#     elif columns_out:
-#         cols = [el for el in cols if el not in columns_out]
-#         df = df[cols]
-#
-#     if dataframe:
-#         return df
-#     else:
-#         if len(cols) == 1:
-#             res = [df.loc[i, cols[0]] for i in range(len(df))]
-#             res = sorted(set(res), key=lambda x: res.index(x))
-#             res = [int(i) if type(i) == np.int64 else i for i in res]
-#             return res
-#         else:
-#             res = [tuple(df.iloc[i]) for i in range(len(df))]
-#             res2 = []
-#             for i in res:
-#                 temp = []
-#                 for j in i:
-#                     if type(j) == np.int64:
-#                         temp.append(int(j))
-#                     else:
-#                         temp.append(j)
-#                 res2.append(tuple(temp))
-#             return res2
-
-
-def db_select(database, table, columns, where=None):
+def db_select(table, columns, where=None):
 
     """
     Return content from a specific table of the database.
 
-    :param database: str
     :param table: str, name of the table
     :param columns: list, each element of the list is a column of the table.
     :param where: str, condition
@@ -123,7 +56,7 @@ def db_select(database, table, columns, where=None):
 
     """
 
-    db, c = start_db(database)
+    db, c = start_db()
 
     cols = ', '.join(columns)
     if where:
@@ -140,26 +73,25 @@ def db_select(database, table, columns, where=None):
     return content
 
 
-def start_db(database):
+def start_db():
 
-    db = sqlite3.connect(database)
+    db = sqlite3.connect('fanta_asta_db.db')
     c = db.cursor()
     c.execute("PRAGMA foreign_keys = ON")
 
     return db, c
 
 
-def empty_table(database, table):
+def empty_table(table):
 
     """
     Delete everything from table.
 
-    :param database: str
     :param table: str
 
     """
 
-    db, c = start_db(database)
+    db, c = start_db()
 
     query = f'DELETE FROM {table}'
 
@@ -168,18 +100,17 @@ def empty_table(database, table):
     db.close()
 
 
-def db_delete(database, table, where):
+def db_delete(table, where):
 
     """
     Remove entry from database.
 
-    :param database: str
     :param table: str
     :param where: str
 
     """
 
-    db, c = start_db(database)
+    db, c = start_db()
 
     query = f'DELETE FROM {table} WHERE {where}'
 
@@ -188,19 +119,18 @@ def db_delete(database, table, where):
     db.close()
 
 
-def db_insert(database, table, columns, values):
+def db_insert(table, columns, values):
 
     """
     Insert a new row in the table.
 
-    :param database: str
     :param table: str, name of the table
     :param columns: list, each element of the list is a column of the table.
     :param values: list, values of the corresponding columns
 
     """
 
-    db, c = start_db(database)
+    db, c = start_db()
 
     cols = ', '.join(columns)
     vals = ', '.join(['?' for _ in values])
@@ -211,12 +141,11 @@ def db_insert(database, table, columns, values):
     db.close()
 
 
-def db_update(database, table, columns, values, where):
+def db_update(table, columns, values, where):
 
     """
     Update values in the table.
 
-    :param database: str
     :param table: str, name of the table
     :param columns: list, each element of the list is a column of the table.
     :param values: list, values of the corresponding columns
@@ -224,7 +153,7 @@ def db_update(database, table, columns, values, where):
 
     """
 
-    db, c = start_db(database)
+    db, c = start_db()
 
     cols = ', '.join([f'{c}=?' for c in columns])
     query = f'UPDATE {table} SET {cols} WHERE {where}'

@@ -1,14 +1,10 @@
 import os
 import pandas as pd
 import numpy as np
+import config as cfg
 import db_functions as dbf
-from pandas import ExcelWriter
 from nltk.metrics.distance import jaccard_distance
 from nltk.util import ngrams
-
-
-anno = '2019-2020'
-dbase = 'fanta_asta_db.db'
 
 
 def aggiorna_db_con_nuove_quotazioni():
@@ -30,8 +26,7 @@ def aggiorna_db_con_nuove_quotazioni():
 			last = name
 
 	players = pd.read_excel(last, sheet_name="Tutti", usecols=[1, 2, 3, 4])
-	pls_in_db = dbf.db_select(database=dbase,
-	                          table='players',
+	pls_in_db = dbf.db_select(table='players',
 							  columns=['player_name'])
 
 	for x in range(len(players)):
@@ -39,33 +34,16 @@ def aggiorna_db_con_nuove_quotazioni():
 
 		if pl in pls_in_db:
 			dbf.db_update(
-					database=dbase,
 					table='players',
 					columns=['player_team', 'player_price'],
 					values=[team[:3].upper(), int(price)],
-					where='player_name = "{}"'.format(pl))
-
-			# dbf.db_update(
-			# 		database=dbase,
-			# 		table='stats',
-			# 		columns=['team', 'price'],
-			# 		values=[team[:3].upper(), int(price)],
-			# 		where='name = "{}"'.format(pl))
+					where=f'player_name = "{pl}"')
 		else:
 			dbf.db_insert(
-					database=dbase,
 					table='players',
 					columns=['player_name', 'player_team',
 							 'player_roles', 'player_price', 'player_status'],
 					values=[pl, team[:3].upper(), role, int(price), 'FREE'])
-
-			# dbf.db_insert(
-			# 		database=dbase,
-			# 		table='stats',
-			# 		columns=['name', 'team', 'roles', 'status', 'mv', 'mfv',
-			# 		         'regular', 'going_in', 'going_out', 'price'],
-			# 		values=[pl, team[:3].upper(), role, 'FREE', 0, 0,
-			# 		        0, 0, 0, int(price)])
 
 	del players
 
@@ -79,57 +57,48 @@ def aggiorna_status_calciatori():
 
 	"""
 
-	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
-						 sheet_name="Foglio1-1", usecols=range(0, 24, 3))
+	asta = pd.read_excel(os.getcwd() + f'/Asta{cfg.YEAR}.xlsx',
+						 sheet_name="Foglio1", usecols=range(0, 32, 4))
+	asta = asta.iloc[4:].copy()
 
 	for team in asta.columns:
 		pls = asta[team].dropna()
 		for pl in pls:
 			dbf.db_update(
-					database=dbase,
 					table='players',
 					columns=['player_status'],
-					values=[team], where='player_name = "{}"'.format(pl))
+					values=[team],
+					where=f'player_name = "{pl.upper()}"')
 
 	dbf.db_update(
-			database=dbase,
 			table='players',
 			columns=['player_status'],
-			values=['FREE'], where='player_status IS NULL')
+			values=['FREE'],
+			where='player_status IS NULL')
 
 
-def correggi_file_asta():
-
-	"""
-	Crea una copia del file originale contenente le rose definite il giorno
-	dell'asta ma con i nomi dei calciatori corretti secondo il formato di
-	Fantagazzetta.
+def aggiorna_budgets():
 
 	"""
+	Aggiorna lo status di ogni calciatore nella tabella "players" del db.
+	Lo status sarà la fantasquadra proprietaria del giocatore mentre ogni
+	giocatore svincolato avrà status = FREE.
 
-	asta = pd.read_excel(os.getcwd() + '/Asta{}.xlsx'.format(anno),
-						 header=0, sheet_name="Foglio1")
-	players = dbf.db_select(
-			database=dbase,
-			table='players',
-			columns=['player_name', 'player_team'])
+	"""
 
-	# TODO make df from players
+	asta = pd.read_excel(os.getcwd() + f'/Asta{cfg.YEAR}.xlsx',
+						 sheet_name="Foglio1",
+						 usecols=range(0, 32),
+	                     nrows=3)
 
-	for i in range(0, len(asta.columns), 3):
-		temp_pl = asta[asta.columns[i:i+3]].dropna()
-		for j in range(len(temp_pl)):
-			pl, tm = temp_pl.loc[j, temp_pl.columns[0:2]]
-			flt_df = players[players['player_team'] == tm.upper()]
-			names = flt_df['player_name'].values
-			correct_pl = jaccard_result(pl, names, 3)
-			asta.loc[j, [asta.columns[i],
-						 asta.columns[i+1]]] = correct_pl, tm.upper()
-
-	writer = ExcelWriter('Asta{}_2.xlsx'.format(anno), engine='openpyxl')
-	asta.to_excel(writer, sheet_name='Foglio1')
-	writer.save()
-	writer.close()
+	for i in range(0, 32, 4):
+		team = asta.iloc[:, i].name
+		budget = int(asta.iloc[2, i+1])
+		dbf.db_update(
+				table='budgets',
+				columns=['budget_value'],
+				values=[budget],
+				where=f'budget_team = "{team}"')
 
 
 def jaccard_result(in_opt, all_opt, ngrm):
@@ -167,15 +136,15 @@ def quotazioni_iniziali():
 
 	"""
 
-	dbf.empty_table(database=dbase, table='players')
+	dbf.empty_table(table='players')
 
 	players = pd.read_excel(os.getcwd() + '/Quotazioni.xlsx',
-							sheet_name="Tutti", usecols=[1, 2, 3, 4])
+							sheet_name="Tutti",
+							usecols=[1, 2, 3, 4])
 
 	for i in range(len(players)):
 		role, name, team, price = players.iloc[i].values
 		dbf.db_insert(
-				database=dbase,
 				table='players',
 				columns=['player_name', 'player_team',
 						 'player_roles', 'player_price'],
@@ -195,29 +164,18 @@ def quotazioni_iniziali():
 #    budgets post-asta di ciascuna squadra all'interno del db.
 
 
-# 3) Lanciare le funzioni:
+# 3) Lanciare la funzione:
 
 # quotazioni_iniziali()
-# correggi_file_asta()
-
-
-# 4) A questo punto nella cartella ci sarà un nuovo file chiamato
-#    "Asta2018-2019_2.xlsx". Copiare la tabella in esso contenuta ed incollarla
-#    in un secondo Foglio di calcolo appositamente creato nel file originale
-#    "Asta2018-2019.xlsx". Il nuovo Foglio di calcolo dovrà chiamarsi
-#    "Foglio1-1".
-
-
-# 5) Lanciare la funzione:
-
 # aggiorna_status_calciatori()
+# aggiorna_budgets()
 
 
-# 6) Prima di ogni mercato, scaricare il nuovo Excel con le quotazioni
+# 4) Prima di ogni mercato, scaricare il nuovo Excel con le quotazioni
 #    aggiornate, salvarlo con il nome relativo al mercato in questione (Esempio
 #    "Quotazioni_PrimoMercato.xlsx") e lanciare la funzione:
 
 # aggiorna_db_con_nuove_quotazioni()
 
 
-# 7) Utilizzare il bot per il mercato.
+# 5) Utilizzare il bot per il mercato.

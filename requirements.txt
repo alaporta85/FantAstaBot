@@ -1,5 +1,0 @@
-python-telegram-bot
-PyYAML==3.13
-pandas
-nltk==3.3
-selenium==3.12.0
