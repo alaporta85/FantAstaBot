@@ -1,5 +1,4 @@
 *
-#!/**/
-#!*.py
-#!*.db
-#!.gitignore
+!*.py
+!*.db
+!.gitignore
