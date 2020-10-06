@@ -5,7 +5,7 @@ with open('token.txt', 'r') as f:
 
 # True durante il debugging, reindirizza a Testazza tutti i messaggi
 # solitamente mandati al gruppo
-BLOCK = True
+BLOCK = False
 FANTA_ID = -318148079
 POLPS_ID = 67507055
 
