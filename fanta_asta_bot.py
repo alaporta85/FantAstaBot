@@ -691,7 +691,8 @@ def print_rosa(bot, update):
 	budget = dbf.db_select(
 			table='budgets',
 			columns=['budget_value'],
-			where=f'budget_team = "{user}"')[0]
+			where=f'budget_team = "{user}"')
+	budget = budget if budget else 0
 
 	message += (f'\n\nNumero di giocatori: <b>{len(rosa)}</b>\n' +
 	            f'Milioni disponibili: <b>{budget}</b>')
