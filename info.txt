@@ -1,0 +1,102 @@
+Questo bot ha 14 comandi che permetteranno di effettuare tutte le operazionixx
+necessarie in sede di mercato.
+
+IMPORTANTE: Ogni comando DEVE essere inviato in chat privata con il bot.xx
+Nel gruppo ufficiale verranno inviati tutti i riepiloghi.
+
+
+                    <b>OFFERTE</b>
+
+1) /offro: Utilizzato sia per presentare una nuova offerta sia per rilanciarexx
+un'offerta già esistente. L'offerta deve contenere il valore numerico e ilxx
+nome del calciatore in questione. L'ordine NON è importante.
+Se ad esempio volessi offrire 20 per Petagna il comando potrebbe essere unoxx
+tra:
+
+          /offro 20, petagna
+          /offro petagna, 20
+
+IMPORTANTE: utilizzare la virgola per separare i 2 inputs.
+
+NOTA 1: Il codice dovrebbe riconoscere il calciatore anche in caso dixx
+piccoli errori nel nome ma ovviamente più il nome che scrivete è corretto exx
+maggiori saranno le probabilità che il codice lo riconosca.
+
+NOTA2: Ad ogni offerta inviata, il bot prova a riconoscere il giocatore daxx
+voi inviato e ad associarlo con uno degli svincolati. Quindi nel caso in cuixx
+il giocatore restituito dal bot non dovesse essere quello da voi richiestoxx
+nonostante l'abbiate scritto correttamente, controllate che siaxx
+effettivamente svicolato o che l'asta in corso non sia in realtà conclusa.
+Discorso analogo per il comando /autobid.
+
+NOTA3: Un'offerta (o un rilancio) può anche essere presentata utilizzando ilxx
+comando /autobid, come spiegato in /info_autobid.
+
+
+2) /confermo_offerta: non ha bisogno di spiegazioni
+
+
+3) /riepilogo: mostra le aste in corso e quelle concluse
+
+
+4) /ufficiali: mostra tutte le ufficializzazioni eseguite
+
+
+                    <b>PAGAMENTI</b>
+
+5) /pago: Utilizzato per ufficializzare le aste concluse ed effettuare ilxx
+pagamento. Il comando DEVE avere la forma
+
+          /pago calciatore, modo di pagamento
+
+Se ad esempio dovessi pagare i 20 di Petagna con Schick + 5 milioni:
+
+          /pago petagna, schick, 5
+
+NOTA1: Vale lo stesso discorso di prima sull'importanza della virgola.
+
+NOTA2: Il primo nome DEVE essere il giocatore acquistato, per tutto il restoxx
+l'ordine non ha importanza.
+
+
+6) /confermo_pagamento: non ha bisogno di spiegazioni
+
+
+                    <b>AUTOBID</b>
+
+7) /autobid: Utilizzato per impostare il valore massimo del rilancioxx
+automatico. L'autobid deve contenere il valore numerico e il nome delxx
+calciatore in questione. L'ordine NON è importante. Esempio:
+
+          /autobid 20, petagna
+          /autobid petagna, 20
+
+
+8) /confermo_autobid: non ha bisogno di spiegazioni
+
+
+9) /elimino_autobid: Utilizzato per eliminare un autobid precedentementexx
+impostato. Il comando DEVE avere la forma:
+
+          /elimino_autobid calciatore
+
+
+10) /confermo_eliminazione: non ha bisogno di spiegazioni
+
+
+11) /riepilogo_autobid: Utilizzato per controllare tutti i propri autobidxx
+ancora attivi
+
+
+12) /info_autobid: Spiegazione del funzionamento dell'autobid
+
+
+                    <b>EXTRA</b>
+
+13) /rosa: mostra la rosa aggiornata di colui che invia il comando
+
+
+14) /prezzo: mostra il prezzo del giocatore richiesto e la fantasquadra dixx
+appartenenza (o lo status di svincolato). Il comando DEVE avere la forma:
+
+          /prezzo calciatore, squadra

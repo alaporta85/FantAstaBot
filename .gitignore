@@ -1,4 +1,7 @@
 *
+!*/
 !*.py
 !*.db
 !.gitignore
+!*info*
+!config/logs/*
