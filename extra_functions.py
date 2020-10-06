@@ -31,7 +31,6 @@ def aggiorna_db_con_nuove_quotazioni():
 
 	for x in range(len(players)):
 		role, pl, team, price = players.iloc[x].values
-		pl = pl.replace('.', '')
 
 		if pl in pls_in_db:
 			dbf.db_update(
