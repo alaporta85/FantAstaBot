@@ -277,7 +277,8 @@ def confermo_pagamento(bot, update):
 	budget = dbf.db_select(
 			table='budgets',
 			columns=['budget_value'],
-			where=f'budget_team = "{user}"')[0]
+			where=f'budget_team = "{user}"')
+	budget = budget[0] if budget else 0
 
 	new_budget = budget
 	for i in mn:
