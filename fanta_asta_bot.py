@@ -300,36 +300,36 @@ def confermo_pagamento(bot, update):
 		                        text='Budget insufficiente')
 	else:
 		dbf.db_update(
-				table='budgets',
-				columns=['budget_value'],
-				values=[new_budget - pr],
-				where=f'budget_team = "{user}"')
+					table='budgets',
+					columns=['budget_value'],
+					values=[new_budget - pr],
+					where=f'budget_team = "{user}"')
 
 		dbf.db_update(
 					table='players',
-				columns=['player_status'],
-				values=[user],
-				where=f'player_name = "{pl}"')
+					columns=['player_status'],
+					values=[user],
+					where=f'player_name = "{pl}"')
 
-		dbf.db_update(
-					table='stats',
-				columns=['status'],
-				values=[user],
-				where=f'name = "{pl}"')
+		# dbf.db_update(
+		# 			table='stats',
+		# 			columns=['status'],
+		# 			values=[user],
+		# 			where=f'name = "{pl}"')
 
 		dbf.db_update(
 					table='offers',
-				columns=['offer_status'],
-				values=['Official'],
-				where=(f'offer_player = "{pl}" AND ' +
-				      'offer_status = "Not Official"'))
+					columns=['offer_status'],
+					values=['Official'],
+					where=(f'offer_player = "{pl}" AND ' +
+					      'offer_status = "Not Official"'))
 
 		dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 		dbf.db_update(
 					table='pays',
-				columns=['pay_dt', 'pay_status'],
-				values=[dt, 'Confirmed'],
-				where=f'pay_player = "{pl}"')
+					columns=['pay_dt', 'pay_status'],
+					values=[dt, 'Confirmed'],
+					where=f'pay_player = "{pl}"')
 
 		for i in mn:
 			try:
@@ -337,16 +337,16 @@ def confermo_pagamento(bot, update):
 			except ValueError:
 				player = i.split(' (')[0]
 				dbf.db_update(
-									table='players',
-						columns=['player_status'],
-						values=['FREE'],
-						where=f'player_name = "{player}"')
+							table='players',
+							columns=['player_status'],
+							values=['FREE'],
+							where=f'player_name = "{player}"')
 
-				dbf.db_update(
-									table='stats',
-						columns=['status'],
-						values=['FREE'],
-						where=f'name = "{player}"')
+				# dbf.db_update(
+				# 			table='stats',
+				# 			columns=['status'],
+				# 			values=['FREE'],
+				# 			where=f'name = "{player}"')
 
 	message = (f'<i>{user}</i> ha ufficializzato ' +
 	           f'<b>{pl}</b> a {pr}.\nPagamento: {", ".join(mn)}\n')
@@ -692,7 +692,7 @@ def print_rosa(bot, update):
 			table='budgets',
 			columns=['budget_value'],
 			where=f'budget_team = "{user}"')
-	budget = budget if budget else 0
+	budget = budget[0] if budget else 0
 
 	message += (f'\n\nNumero di giocatori: <b>{len(rosa)}</b>\n' +
 	            f'Milioni disponibili: <b>{budget}</b>')
