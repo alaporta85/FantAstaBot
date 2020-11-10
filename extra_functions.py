@@ -31,19 +31,20 @@ def aggiorna_db_con_nuove_quotazioni():
 
 	for x in range(len(players)):
 		role, pl, team, price = players.iloc[x].values
+		pl = pl.replace('.', '')
 
 		if pl in pls_in_db:
 			dbf.db_update(
 					table='players',
 					columns=['player_team', 'player_price'],
-					values=[team[:3].upper(), int(price)],
+					values=[team, int(price)],
 					where=f'player_name = "{pl}"')
 		else:
 			dbf.db_insert(
 					table='players',
 					columns=['player_name', 'player_team',
 							 'player_roles', 'player_price', 'player_status'],
-					values=[pl, team[:3].upper(), role, int(price), 'FREE'])
+					values=[pl, team, role, int(price), 'FREE'])
 
 	del players
 
@@ -148,7 +149,7 @@ def quotazioni_iniziali():
 				table='players',
 				columns=['player_name', 'player_team',
 						 'player_roles', 'player_price'],
-				values=[name, team[:3].upper(), role, int(price)])
+				values=[name, team, role, int(price)])
 
 	del players
 
@@ -175,7 +176,7 @@ def quotazioni_iniziali():
 #    aggiornate, salvarlo con il nome relativo al mercato in questione (Esempio
 #    "Quotazioni_PrimoMercato.xlsx") e lanciare la funzione:
 
-# aggiorna_db_con_nuove_quotazioni()
+aggiorna_db_con_nuove_quotazioni()
 
 
 # 5) Utilizzare il bot per il mercato.
