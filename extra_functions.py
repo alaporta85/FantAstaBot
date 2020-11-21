@@ -176,7 +176,7 @@ def quotazioni_iniziali():
 #    aggiornate, salvarlo con il nome relativo al mercato in questione (Esempio
 #    "Quotazioni_PrimoMercato.xlsx") e lanciare la funzione:
 
-aggiorna_db_con_nuove_quotazioni()
+# aggiorna_db_con_nuove_quotazioni()
 
 
 # 5) Utilizzare il bot per il mercato.
